@@ -1,10 +1,10 @@
 CC=clang
 CFLAGS=-emit-llvm -c -g -O0 -Xclang -disable-O0-optnone
-OBJ=test-router.bc
+OBJ=test-driver.bc
 
-all: test-router.bc
+all: $(OBJ)
 
-test-router.bc: test-router.cpp
+test-driver.bc: test-driver.cpp
 	$(CC) $(CFLAGS) $<
 
 klee: $(OBJ)
