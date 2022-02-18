@@ -3,5 +3,6 @@
 
 #include <klee/klee.h>
 #include <cstdint>
+#include <cassert>
 
 #endif

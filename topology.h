@@ -9,7 +9,7 @@ class Topology {
             return node0.forward(dst);
         }
         //error
-        return -1;
+        assert(0);
 	}
 
     //negative as un-linked port
@@ -29,6 +29,10 @@ class Topology {
             if (node < 0) return port;
         }
         return -1; //error
+    }
+
+    int get_node_max() {
+        return 0;
     }
 
   public:
