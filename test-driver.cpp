@@ -2,12 +2,12 @@
 
 int main() {
 	uint32_t node;
-	uint32_t dst;
+	Header header;
 	klee_make_symbolic(&node, sizeof(node), "node");
-	klee_make_symbolic(&dst, sizeof(dst), "dst");
+	klee_make_symbolic(&header, sizeof(header), "header");
 
 	Topology t;
 	klee_assume(node >= 0 && node <= t.get_node_max());
-	int port = t.forward(node, dst);
+	int port = t.forward(node, header);
 	return 0;
 }

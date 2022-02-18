@@ -4,9 +4,9 @@
 
 class Topology {
   public:
-	int node_execute (int node, uint32_t dst) {
+	Egress node_execute (int node, Header header) {
         if (node == 0) {
-            return node0.forward(dst);
+            return node0.forward(header);
         }
         //error
         assert(0);
@@ -21,12 +21,13 @@ class Topology {
         }
     }
 
-    int forward(int node, uint32_t dst) {
+    int forward(int node, Header header) {
         for (int hop = 0; hop < 16; hop ++) {
-            int port = node_execute(node, dst);
-            if (port < 0) return port;
-            node = port_to_device(port);
-            if (node < 0) return port;
+            Egress egress = node_execute(node, header);
+            header = egress.header;
+            if (egress.port < 0) return egress.port;
+            node = port_to_device(egress.port);
+            if (node < 0) return egress.port;
         }
         return -1; //error
     }

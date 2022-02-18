@@ -5,13 +5,13 @@
 
 class Router {
   public:
-	int forward (uint32_t dst) {
-		if ((dst >> (32 - 16)) == (0xC0A80000 >> (32 - 16))) {
-			return 1;
-		} else if ((dst >> (32 - 8)) == (0x0A000000 >> (32 - 8))) {
-			return 2;
+	Egress forward (Header header) {
+		if ((header.dst_address >> (32 - 16)) == (0xC0A80000 >> (32 - 16))) {
+			return Egress(header, 1);
+		} else if ((header.dst_address >> (32 - 8)) == (0x0A000000 >> (32 - 8))) {
+			return Egress(header, 2);
 		} else {
-			return 0;
+			return Egress(header, 0);
 		}
         //negative as drop
 	}
