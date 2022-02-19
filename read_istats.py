@@ -6,7 +6,7 @@ lines = f.readlines()
 
 file_to_coverage: Dict[str, Set[int]] = dict()
 for l in lines:
-    if l[0:3] == 'fl=' or l[0:4] == 'fl=':
+    if l[0:3] == 'fl=':
         file_name = l[l.find("=") + 1:-1]
         currentFile = file_name
     if l.find('=') == -1 and l.find(':') == -1 and len(l) > 5:
