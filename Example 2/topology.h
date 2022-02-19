@@ -55,7 +55,6 @@ class Topology {
 
     Location forward(int node, Header header) {
         for (int hop = 0; hop < 16; hop ++) {
-            std::cout << hop << node << std::endl;
             Egress egress = node_execute(node, header);
             header = egress.header;
             if (egress.port < 0) return Location(node, egress.port);
