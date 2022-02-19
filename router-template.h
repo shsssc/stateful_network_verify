@@ -5,11 +5,15 @@
 
 class {{name}} {
   public:
-	Egress forward (Header header) {
-		if (accessList(header)) return Egress(header, -1);
-		int port = forwardTable(header.dst_address);
-		return Egress(header, port);
-	}
+        PktState forward(PktState stateIn) {
+            int node = stateIn.node;
+            int portIn = stateIn.port;
+            Header &header = stateIn.header;
+            if (aclIn(header, portIn)) return {header, node, -1};
+            int portOut = forwardTable(header.dst_address);
+            if (aclOut(header, portOut)) return {header, node, -1};
+            return {header, node, portOut};
+        }
 
 	int forwardTable(uint32_t dst) {
 	    {% for row in table %}
@@ -24,7 +28,11 @@ class {{name}} {
         //negative as drop
 	}
 
-	bool accessList(Header header) {
+	bool aclIn(Header header, int port) {
+		return false; // true as drop
+	}
+
+	bool aclOut(Header header, int port) {
 		return false; // true as drop
 	}
 };
