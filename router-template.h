@@ -16,7 +16,7 @@ class {{name}} {
             {% if row.prefix_len == 0 %}
 	    return {{row.port}};
             {% else %}
-        if ((dst >> {{32 - row.prefix_len}}) == ({{row.hex_address}} >> {{32 - row.prefix_len}})) { // {{row.str_address}}/{{row.prefix_len}}
+        if ((dst >> {{32 - row.prefix_len}}) == ({{row.hex_address}} >> {{32 - row.prefix_len}})) // {{row.str_address}}/{{row.prefix_len}}
 			return {{row.port}};
 			{% endif %}
         {% endfor %}

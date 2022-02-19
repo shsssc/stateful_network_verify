@@ -12,9 +12,9 @@ class Router1 {
 	}
 
 	int forwardTable(uint32_t dst) {
-        if ((dst >> 16) == (0xa000000 >> 16)) { // 10.0.0.0/16
+        if ((dst >> 16) == (0xa000000 >> 16)) // 10.0.0.0/16
 			return 1;
-        if ((dst >> 16) == (0xa010000 >> 16)) { // 10.1.0.0/16
+        if ((dst >> 16) == (0xa010000 >> 16)) // 10.1.0.0/16
 			return 3;
         return -1;
         //negative as drop
