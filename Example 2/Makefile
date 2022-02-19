@@ -8,10 +8,13 @@ test-driver.bc: test-driver.cpp
 	$(CC) $(CFLAGS) $<
 
 klee: $(OBJ)
-	klee $(OBJ)
+	klee --optimize $(OBJ)
 
 show-tests: klee-last
 	echo klee-last/test*.ktest | xargs ktest-tool 
+
+test-driver: test-driver.cpp
+	$(CC) -L ../../klee_build/lib/ -lkleeRuntest -o $@ $<
 
 clean:
 	rm -rf *.bc *.o a.out klee-last klee-out-*

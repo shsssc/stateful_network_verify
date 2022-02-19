@@ -8,6 +8,6 @@ int main() {
 
 	Topology t;
 	klee_assume(node >= 0 && node <= t.get_node_max());
-	int port = t.forward(node, header);
+	Location port = t.forward(node, header);
 	return 0;
 }
