@@ -23,4 +23,14 @@ struct Egress {
     {}
 };
 
+struct Location {
+    int node;
+    int port;
+
+    Location(int n, int p) :
+        node(n),
+        port(p)
+    {}
+};
+
 #endif
