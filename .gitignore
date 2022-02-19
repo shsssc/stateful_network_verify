@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# Klee
+klee-last
+klee-out*
+*.bc
+
+# IDEA
+.idea
+cmake-build-debug
+
