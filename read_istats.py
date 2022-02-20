@@ -1,6 +1,6 @@
 from typing import Dict, Set
 
-f = open('../Example 3/klee-out-0/run.istats', 'r')
+f = open('./klee-last/run.istats', 'r')
 currentFile: str = "N/A"
 lines = f.readlines()
 
