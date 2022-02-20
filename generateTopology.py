@@ -43,7 +43,7 @@ class TopologyGenerator:
         self.nodes = nodes
 
     def generate_code(self) -> str:
-        template = jinja_env.get_template("topology-template.h")
+        template = jinja_env.get_template("templates/topology.h")
         return template.render(nodes=self.nodes, links=self.links, hop=self.hop)
 
 

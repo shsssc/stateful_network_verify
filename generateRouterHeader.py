@@ -29,7 +29,7 @@ class RouterGenerator:
         self.table = table
 
     def generate_code(self) -> str:
-        template = jinja_env.get_template("router-template.h")
+        template = jinja_env.get_template("templates/router.h")
         return template.render(name=self.name, table=self.table)
 
 if __name__ == "__main__":
