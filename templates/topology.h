@@ -2,7 +2,7 @@
 #define TOPOLOGY_H
 
 {% for class_name, _ in nodes.items() %}
-#include "{{class_name}}.h"
+#include "{{class_name.lower()}}.h"
 {% endfor %}
 
 class Topology {
@@ -44,7 +44,7 @@ public:
 
 public:
     {% for class_name, id in nodes.items() %}
-    {{class_name}} node{{id}};
+    {{class_name.capitalize()}} node{{id}};
     {% endfor %}
 };
 

@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', dest='table', help='file name of topology table')
     parser.add_argument('-o', dest='output', default="-", help='file name of output code')
     parser.add_argument('-p', dest='hop', default="16", help='simulation hop limit')
-    parser.add_argument('-m', dest='map', default="-", help='save router to id map to csv')
+    parser.add_argument('-m', dest='map', default="", help='save router to id map to csv')
 
     args = parser.parse_args()
 
@@ -70,6 +70,8 @@ if __name__ == "__main__":
     if args.map == "-":
         print("// node name to node id map:")
         print("// " + a.generate_name_2_node_map().replace("\n", "\n// "))
+    elif args.map == "":
+        pass
     else:
         with open(args.map, 'w') as f:
-            f.write(a.generate_code())
+            f.write(a.generate_name_2_node_map())

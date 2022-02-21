@@ -10,7 +10,7 @@ class {{name}} {
             int portIn = stateIn.port;
             Header &header = stateIn.header;
             if (aclIn(header, portIn)) return {header, node, -1};
-            int portOut = forwardTable(header.dst_address);
+            int portOut = forwardTable(header.dst_address); //generated-comment: [reached] {{name}}
             if (aclOut(header, portOut)) return {header, node, -1};
             return {header, node, portOut};
         }

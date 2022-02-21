@@ -40,3 +40,8 @@ klee-out*
 .idea
 cmake-build-debug
 
+# Python
+__pycache__
+
+# Generated Code
+Example 3/*.h
