@@ -44,4 +44,6 @@ cmake-build-debug
 __pycache__
 
 # Generated Code
-Example 3/*.h
+Example*/*.h
+Example*/*.cpp
+Example*/Makefile
