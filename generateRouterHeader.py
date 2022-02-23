@@ -1,7 +1,7 @@
-import string, csv, sys, socket, struct
-import argparse
+import csv, sys, argparse
 from util.jinjaEnv import jinja_env
 from util.snakeCase import snake_case
+from util.IPPrefixDecode import decode_ip_prefix
 
 class RouterGenerator:
     def __init__(self, name: str):
@@ -13,13 +13,13 @@ class RouterGenerator:
         with open(file, 'r') as f:
             tsv = csv.reader(f)
             for row in tsv:
-                prefix = row[0].split("/")
-                if len(prefix) != 2:
+                try:
+                    prefix = decode_ip_prefix(row[0])
+                    self.table.append({**prefix, 'port': int(row[1])})
+                except RuntimeError as ex:
                     sys.stderr.write("Bad forwarding table line %s\n" % row)
-                packed_ip = socket.inet_aton(prefix[0])
-                hex_ip = hex(struct.unpack("!L", packed_ip)[0])
-                self.table.append({'str_address': prefix[0], 'prefix_len': int(prefix[1]),
-                              'port': int(row[1]), 'hex_address': hex_ip})
+                    sys.stderr.write(ex.args[0] + "\n")
+                    sys.exit(1)
         self.table.sort(key=lambda e: e['prefix_len'], reverse=True)
 
     def generate_code(self) -> str:
