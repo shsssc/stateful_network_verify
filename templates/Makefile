@@ -15,7 +15,7 @@ show-tests: klee-last
 	echo klee-last/test*.ktest | xargs ktest-tool 
 
 show-stats: klee-last
-	python ../read_istats.py || python3 ../read_istats.py
+	python ../reachedGeneratedComment.py -d ./klee-last/ -s ./ || python3 ../reachedGeneratedComment.py -d ./klee-last/ -s ./
 
 test-driver: test-driver.cpp
 	$(CC) -L ../../klee_build/lib/ -lkleeRuntest -o $@ $<
