@@ -1,13 +1,7 @@
 import string, csv, sys, socket, struct
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import argparse
-
-jinja_env = Environment(
-    loader=FileSystemLoader("."),
-    autoescape=select_autoescape()
-)
-jinja_env.trim_blocks = True
-jinja_env.lstrip_blocks = True
+from util.jinjaEnv import jinja_env
+from util.snakeCase import snake_case
 
 
 class TopologyGenerator:
@@ -44,7 +38,7 @@ class TopologyGenerator:
 
     def generate_code(self) -> str:
         template = jinja_env.get_template("templates/topology.h")
-        return template.render(nodes=self.nodes, links=self.links, hop=self.hop)
+        return template.render(nodes=self.nodes, links=self.links, hop=self.hop, snake_case=snake_case)
 
     def generate_name_2_node_map(self) -> str:
         return '\n'.join([f"{k},{v}" for k, v in self.nodes.items()])
@@ -53,7 +47,7 @@ class TopologyGenerator:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generates C++ model code for network topology')
-    parser.add_argument('-t', dest='table', help='file name of topology table')
+    parser.add_argument('-t', dest='table', required=True, help='file name of topology table')
     parser.add_argument('-o', dest='output', default="-", help='file name of output code')
     parser.add_argument('-p', dest='hop', default="16", help='simulation hop limit')
     parser.add_argument('-m', dest='map', default="", help='save router to id map to csv')

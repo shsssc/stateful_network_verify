@@ -1,6 +1,7 @@
 from generateTopology import TopologyGenerator
 from generateRouterHeader import RouterGenerator
 from generateSrcReachabilityTestDriver import SrcReachabilityDriverGenerator
+from util.snakeCase import snake_case
 import argparse
 import os
 
@@ -26,7 +27,7 @@ class NetworkGenerator:
         with open(os.path.join(self.directory, "test-driver.cpp"), 'w') as f:
             f.write(self.driverCode.generate_code())
         for e in self.routerCodes:
-            with open(os.path.join(self.directory, e.name.lower() + ".h"), 'w') as routerFile:
+            with open(os.path.join(self.directory, snake_case(e.name) + ".h"), 'w') as routerFile:
                 routerFile.write(e.generate_code())
         os.system('cp templates/Makefile "%s"' % self.directory)
         os.system('cp templates/common.h "%s"' % self.directory)
@@ -34,11 +35,11 @@ class NetworkGenerator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates C++ model code for a network')
-    parser.add_argument('-d', dest='directory', help='select config directory of the network')
-    parser.add_argument('-s', dest='src', help='src node')
-    parser.add_argument('-p', dest='port', default="0", help='src port')
+    parser.add_argument('-d', dest='directory', required=True, help='select config directory of the network')
+    parser.add_argument('-s', dest='src', required=True, help='src node')
+    parser.add_argument('-p', dest='port', type=int, default=0, help='src port')
 
     args = parser.parse_args()
 
-    g = NetworkGenerator(args.directory, args.src, int(args.port))
+    g = NetworkGenerator(args.directory, args.src, args.port)
     g.generate_code()

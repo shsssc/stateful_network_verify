@@ -2,7 +2,7 @@
 #define TOPOLOGY_H
 
 {% for class_name, _ in nodes.items() %}
-#include "{{class_name.lower()}}.h"
+#include "{{snake_case(class_name)}}.h"
 {% endfor %}
 
 class Topology {

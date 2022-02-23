@@ -1,5 +1,5 @@
-#ifndef {{name.upper()}}_H
-#define {{name.upper()}}_H
+#ifndef {{name_snake.upper()}}_H
+#define {{name_snake.upper()}}_H
 
 #include "common.h"
 

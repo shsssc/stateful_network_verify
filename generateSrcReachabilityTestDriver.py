@@ -1,14 +1,6 @@
 import string, csv, sys, socket, struct
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import argparse
-
-jinja_env = Environment(
-    loader=FileSystemLoader("."),
-    autoescape=select_autoescape()
-)
-jinja_env.trim_blocks = True
-jinja_env.lstrip_blocks = True
-
+from util.jinjaEnv import jinja_env
 
 class SrcReachabilityDriverGenerator:
     def __init__(self, src: str, port: int):
@@ -27,8 +19,8 @@ class SrcReachabilityDriverGenerator:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generates a main function for reachability from a node')
-    parser.add_argument('-s', dest='src', help='source node ID')
-    parser.add_argument('-p', dest='port', default="0", help='file name of output code')
+    parser.add_argument('-s', dest='src', required=True, help='source node ID')
+    parser.add_argument('-p', dest='port', type=int, default=0, help='source port ID')
     parser.add_argument('-o', dest='output', default="-", help='file name of output code')
     parser.add_argument('-m', dest='map', default="", help='read router name to id map from csv')
 
