@@ -17,6 +17,7 @@ class RouterGenerator:
         with open(file, 'r') as f:
             tsv = csv.reader(f)
             for row in tsv:
+                if len(row) == 0: continue
                 try:
                     prefix = decode_ip_prefix(row[0])
                     self.table.append({**prefix, 'port': int(row[1])})
@@ -31,6 +32,7 @@ class RouterGenerator:
         with open(file, 'r') as f:
             tsv = csv.reader(f)
             for row in tsv:
+                if len(row) == 0: continue
                 try:
                     if row[3].strip().lower() != 'allow' and row[3].strip().lower() != 'deny':
                         raise RuntimeError("Bad allow/deny predicate")

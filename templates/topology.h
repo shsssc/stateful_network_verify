@@ -44,7 +44,7 @@ public:
 
 public:
     {% for class_name, id in nodes.items() %}
-    {{class_name.capitalize()}} node{{id}};
+    {{class_name}} node{{id}};
     {% endfor %}
 };
 

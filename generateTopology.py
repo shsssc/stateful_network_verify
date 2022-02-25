@@ -26,6 +26,7 @@ class TopologyGenerator:
         with open(file, 'r') as f:
             tsv = csv.reader(f)
             for row in tsv:
+                if len(row) == 0: continue
                 node1 = self.__get_node_id(row[0], nodes)
                 port1 = row[1]
                 node2 = self.__get_node_id(row[2], nodes)
