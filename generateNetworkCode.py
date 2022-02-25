@@ -1,6 +1,5 @@
 import sys
 
-from generateACLHeader import ACLGenerator
 from generateTopology import TopologyGenerator
 from generateRouterHeader import RouterGenerator
 from generateSrcReachabilityTestDriver import SrcReachabilityDriverGenerator
@@ -16,34 +15,28 @@ class NetworkGenerator:
         self.topologyCode.add_forwarding_table(os.path.join(directory, "topology.txt"))
         self.driverCode = SrcReachabilityDriverGenerator(src, port)
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
-        self.routerCodes = []
-        self.aclCodes = []
+        self.routerCodes = {}
         for item in os.scandir(directory):
-            if item.is_file() and item.name.endswith(".txt"):
+            if item.is_file():
                 if item.name == "topology.txt":
                     pass
-                elif str(item.name).lower().startswith("acl"):
-                    class_name = item.name[:item.name.rindex(".txt")]
-                    a = ACLGenerator(class_name)
-                    a.add_acl_table(os.path.join(directory, item.name))
-                    self.aclCodes.append(a)
-                else:
-                    class_name = item.name[:item.name.rindex(".txt")]
-                    a = RouterGenerator(class_name)
-                    a.add_forwarding_table(os.path.join(directory, item.name))
-                    self.routerCodes.append(a)
+                elif item.name.endswith(".acl"):
+                    class_name = item.name[:-4]
+                    if class_name not in self.routerCodes: self.routerCodes[class_name] = RouterGenerator(class_name)
+                    self.routerCodes[class_name].add_acl_table(os.path.join(directory, item.name))
+                elif item.name.endswith(".fib"):
+                    class_name = item.name[:-4]
+                    if class_name not in self.routerCodes: self.routerCodes[class_name] = RouterGenerator(class_name)
+                    self.routerCodes[class_name].add_forwarding_table(os.path.join(directory, item.name))
 
     def generate_code(self):
         with open(os.path.join(self.directory, "topology.h"), 'w') as f:
             f.write(self.topologyCode.generate_code())
         with open(os.path.join(self.directory, "test-driver.cpp"), 'w') as f:
             f.write(self.driverCode.generate_code())
-        for e in self.routerCodes:
+        for e in self.routerCodes.values():
             with open(os.path.join(self.directory, snake_case(e.name) + ".h"), 'w') as routerFile:
                 routerFile.write(e.generate_code())
-        for e in self.aclCodes:
-            with open(os.path.join(self.directory, snake_case(e.name) + ".h"), 'w') as aclFile:
-                aclFile.write(e.generate_code())
         os.system('cp templates/Makefile "%s"' % self.directory)
         os.system('cp templates/common.h "%s"' % self.directory)
 

@@ -1,5 +1,0 @@
-AllowHTTP, Allow, Any, Any, Any, 80, 6
-AllowDNS, Allow, Any, Any, Any, 53, Any
-AllowReg, Allow, 10.1.0.0/16, Any, Any, Any, Any
-AllowReg, Allow, Any, 53, 10.0.1.0/24, Any, Any
-Default, Deny, Any, Any, Any, Any, Any
