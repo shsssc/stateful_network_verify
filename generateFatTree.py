@@ -15,7 +15,7 @@ class NetworkGenerator:
                 routerName = "TorP%dT%d" % (pod, tor)
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
                     for server in range(self.r):
-                        fib.write("10.%d.%d.%d/32, %d\n" % (pod, tor, server, server))
+                        pass#fib.write("10.%d.%d.%d/32, %d\n" % (pod, tor, server, server))
                     fib.write("0.0.0.0/0," + ",".join(map(str, range(self.r, self.r * 2))) + "\n")
     
     def generate_leaf_router(self):
