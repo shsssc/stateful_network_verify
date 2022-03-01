@@ -5,6 +5,8 @@
 #include "{{snake_case(class_name)}}.h"
 {% endfor %}
 
+#include <list>
+
 class Topology {
 public:
     PktState node_execute(PktState pktState) {
@@ -32,14 +34,17 @@ public:
         return {header, -1, -1};
     }
 
-    int forward(PktState pktState) {
+    std::list<PktState> forward(PktState pktState) {
+        std::list<PktState> history;
         for (int hop = 0; hop < {{hop}}; hop++) {
             pktState = node_execute(pktState);
-            if (pktState.port == PORT_DROP) return pktState.port;
+            history.push_back(pktState);
+            if (pktState.port == PORT_DROP) return history;
             pktState = link_function(pktState);
-            if (pktState.port == PORT_DROP) return pktState.port;
+            history.push_back(pktState);
+            if (pktState.port == PORT_DROP) return history;
         }
-        return -1; //error
+        return history;
     }
 
 public:
