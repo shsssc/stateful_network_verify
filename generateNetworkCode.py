@@ -1,5 +1,5 @@
 import sys
-
+from generateEcmpRouterHeader import EcmpRouterGenerator
 from generateTopology import TopologyGenerator
 from generateRouterHeader import RouterGenerator
 from generateSrcReachabilityTestDriver import SrcReachabilityDriverGenerator
@@ -16,17 +16,27 @@ class NetworkGenerator:
         self.driverCode = SrcReachabilityDriverGenerator(src, port)
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
         self.routerCodes = {}
+        self.scanDir(directory)
+    
+    def addRouterInstance(self, class_name: str):
+        if class_name not in self.routerCodes: 
+            if class_name.lower().startswith('ecmp'):
+                self.routerCodes[class_name] = EcmpRouterGenerator(class_name)
+            else:
+                self.routerCodes[class_name] = RouterGenerator(class_name)
+    
+    def scanDir(self, directory: str):
         for item in os.scandir(directory):
             if item.is_file():
                 if item.name == "topology.txt":
                     pass
                 elif item.name.endswith(".acl"):
                     class_name = item.name[:-4]
-                    if class_name not in self.routerCodes: self.routerCodes[class_name] = RouterGenerator(class_name)
+                    self.addRouterInstance(class_name)
                     self.routerCodes[class_name].add_acl_table(os.path.join(directory, item.name))
                 elif item.name.endswith(".fib"):
                     class_name = item.name[:-4]
-                    if class_name not in self.routerCodes: self.routerCodes[class_name] = RouterGenerator(class_name)
+                    self.addRouterInstance(class_name)
                     self.routerCodes[class_name].add_forwarding_table(os.path.join(directory, item.name))
 
     def generate_code(self):
