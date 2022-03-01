@@ -1,5 +1,6 @@
 import sys
 from generateEcmpRouterHeader import EcmpRouterGenerator
+from generateLoadBalanceRouterHeader import LoadBalanceRouterGenerator
 from generateTopology import TopologyGenerator
 from generateRouterHeader import RouterGenerator
 from generateSrcReachabilityTestDriver import SrcReachabilityDriverGenerator
@@ -22,6 +23,8 @@ class NetworkGenerator:
         if class_name not in self.routerCodes: 
             if class_name.lower().startswith('ecmp'):
                 self.routerCodes[class_name] = EcmpRouterGenerator(class_name)
+            if class_name.lower().startswith('lb'):
+                self.routerCodes[class_name] = LoadBalanceRouterGenerator(class_name)
             else:
                 self.routerCodes[class_name] = RouterGenerator(class_name)
     

@@ -5,14 +5,15 @@ import os
 
 
 class NetworkGenerator:
-    def __init__(self, directory: str, r: int):
+    def __init__(self, directory: str, r: int, lb_prefix: str):
         self.r = r
         self.directory = directory
+        self.lb_prefix = lb_prefix
 
     def generate_tor_router(self):
         for pod in range(1, self.r * 2 + 1):
             for tor in range(1, self.r + 1):
-                routerName = "EcmpTorP%dT%d" % (pod, tor)
+                routerName = self.lb_prefix + ("TorP%dT%d" % (pod, tor))
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
                     for server in range(self.r):
                         pass#fib.write("10.%d.%d.%d/32, %d\n" % (pod, tor, server, server))
@@ -21,7 +22,7 @@ class NetworkGenerator:
     def generate_leaf_router(self):
         for pod in range(1, self.r * 2 + 1):
             for set in range(1, self.r + 1):
-                routerName = "EcmpLeafP%dS%d" % (pod, set)
+                routerName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
                     for tor in range(self.r):
                         fib.write("10.%d.%d.0/24, %d\n" % (pod, tor, tor))
@@ -41,16 +42,16 @@ class NetworkGenerator:
             # tor-leaf connections
             for pod in range(1, self.r * 2 + 1):
                 for tor in range(1, self.r + 1):
-                    torRouterName = "EcmpTorP%dT%d" % (pod, tor)
+                    torRouterName = self.lb_prefix + ("TorP%dT%d" % (pod, tor))
                     for set in range(1, self.r + 1):
-                        leafRouterName = "EcmpLeafP%dS%d" % (pod, set)
+                        leafRouterName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
                         edges.write("%s,%s,%s,%d\n" % (torRouterName, set + self.r, leafRouterName, tor))
             edges.write("\n")
 
             # leaf-core connections
             for set in range(1, self.r + 1):
                 for pod in range(1, self.r * 2 + 1):
-                    leafRouterName = "EcmpLeafP%dS%d" % (pod, set)
+                    leafRouterName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
                     for redendency in range(1, self.r + 1):
                         coreRouterName = "CoreS%dR%d" % (set, redendency)
                         edges.write("%s,%s,%s,%d\n" % (leafRouterName, redendency + self.r, coreRouterName, pod))
@@ -68,11 +69,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates config for a fat-tree architecture')
     parser.add_argument('-d', dest='directory', required=True, help='select config directory of the network')
     parser.add_argument('-r', dest='redundency', type=int, required=True, help='redundency of nodes')
+    parser.add_argument('-l', dest='load_balance_prefix', default='Ecmp', help="Load balancing model used")
 
     args = parser.parse_args()
 
     if not os.path.isdir(args.directory):
         os.mkdir(args.directory)
 
-    g = NetworkGenerator(args.directory, args.redundency)
+    g = NetworkGenerator(args.directory, args.redundency, args.load_balance_prefix)
     g.generate_code()
