@@ -8,12 +8,12 @@ int main() {
 	Topology t;
 	std::list<PktState> history = t.forward(PktState(header,{{src}},{{port}}));
 	
-	//uncomment below when replaying to show test result
-	/*
+#ifdef RUN_REPLAY
 	for (const auto& i : history)
 		printf("%d %d\n", i.node, i.port);
 	printf("\n");
-	*/
+#endif
+	
 
 	return 0;
 }
