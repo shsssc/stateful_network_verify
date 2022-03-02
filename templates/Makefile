@@ -10,13 +10,16 @@ test-driver.bc: test-driver.cpp
 
 klee: klee-last
 klee-last: $(OBJ)
-	klee --optimize $(OBJ)
+	klee --optimize --write-cov $(OBJ)
+
+klee-cov: klee-last
+	cat klee-last/*.cov |sort | uniq|grep "\./" >  klee-last/all-tests.cov
 
 show-tests: klee-last
 	echo klee-last/test*.ktest | xargs ktest-tool 
 
-show-stats: klee-last
-	python ../reachedGeneratedComment.py -d ./klee-last/ -s ./ || python3 ../reachedGeneratedComment.py -d ./klee-last/ -s ./
+show-stats: klee-cov
+	python3 ../reachedGeneratedComment.py -c ./klee-last/all-tests.cov -s ./
 
 test-driver: test-driver.cpp
 	$(CC) $(REPLAY_CFLAGS) -o $@ $<

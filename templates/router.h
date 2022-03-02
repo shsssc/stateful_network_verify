@@ -5,11 +5,11 @@
 
 class {{name}} {
   public:
-    PktState forward(PktState stateIn) {
+    PktState forward(PktState stateIn) { //generated-comment: [reached] {{name}}
         int node = stateIn.node;
         int portIn = stateIn.port;
         Header &header = stateIn.header;
-        int portOut = forwardTable(header.dst_address); //generated-comment: [reached] {{name}}
+        int portOut = forwardTable(header.dst_address);
         if (!acl(header, portIn, portOut)) return {header, node, -1};
         return {header, node, portOut};
     }

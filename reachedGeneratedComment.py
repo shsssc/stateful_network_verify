@@ -6,23 +6,17 @@ import os
 
 def read_coverage_from_file(file: str) -> Dict[str, Set[int]]:
     f = open(file, 'r')
-    function_file: str = "N/A"
     lines = f.readlines()
 
     file_to_coverage: Dict[str, Set[int]] = dict()
     for l in lines:
-        if l[0:3] == 'fl=':
-            file_name = l[l.find("=") + 1:-1]
-            function_file = file_name
-        if l.find('=') == -1 and l.find(':') == -1 and len(l) > 5:
-            line_number = int(l.split(' ')[1])
-            if line_number == 0:
-                continue
-            if function_file in file_to_coverage:
-                file_to_coverage[function_file].add(line_number)
-            else:
-                file_to_coverage[function_file] = set()
-                file_to_coverage[function_file].add(line_number)
+        file_name, line_number = l.split(":")
+        line_number = int(line_number)
+        if file_name in file_to_coverage:
+            file_to_coverage[file_name].add(line_number)
+        else:
+            file_to_coverage[file_name] = set()
+            file_to_coverage[file_name].add(line_number)
     f.close()
     return file_to_coverage
 
@@ -43,13 +37,12 @@ def read_generated_comments(cov: Dict[str, Set[int]], src_dir: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Read all generated comments from klee-out')
-    parser.add_argument('-d', dest='directory', required=True, help='klee-out director')
+    parser.add_argument('-c', dest='coverage', required=True, help='coverage map file')
     parser.add_argument('-s', dest='src', required=True, help='source file directory')
 
     args = parser.parse_args()
 
-    file_to_coverage = read_coverage_from_file(os.path.join(args.directory, 'run.istats'))
-
+    file_to_coverage = read_coverage_from_file(args.coverage)
     result = read_generated_comments(file_to_coverage, args.src)
     for r in result:
         print(r)

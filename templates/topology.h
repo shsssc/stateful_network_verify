@@ -5,7 +5,7 @@
 #include "{{snake_case(class_name)}}.h"
 {% endfor %}
 
-#include <list>
+#include <cstdio>
 
 class Topology {
 public:
@@ -18,8 +18,8 @@ public:
             return node{{id}}.forward(pktState);
         }
         {% endfor %}
-        //error
-        assert(0);
+
+        assert(0); //generated-comment: [node-dispatch-failed] packet existing
     }
 
     //negative as un-linked port
@@ -34,17 +34,17 @@ public:
         return {header, -1, -1};
     }
 
-    std::list<PktState> forward(PktState pktState) {
-        std::list<PktState> history;
+    void forward(PktState pktState) {
         for (int hop = 0; hop < {{hop}}; hop++) {
+	    if (klee_is_replay())
+            	printf("%d %d\n", pktState.node, pktState.port);
             pktState = node_execute(pktState);
-            history.push_back(pktState);
-            if (pktState.port == PORT_DROP) return history;
+            if (pktState.port == PORT_DROP) return;
             pktState = link_function(pktState);
-            history.push_back(pktState);
-            if (pktState.port == PORT_DROP) return history;
+            if (pktState.port == PORT_DROP) return;
         }
-        return history;
+	assert(0); //generated-comment: [TTL-Drop] potential loop
+        return;
     }
 
 public:
