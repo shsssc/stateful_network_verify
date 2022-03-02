@@ -2,16 +2,18 @@ import string, csv, sys, socket, struct
 import argparse
 from util.jinjaEnv import jinja_env
 from util.snakeCase import snake_case
+import networkx as nx
 
 
 class TopologyGenerator:
-    def __init__(self, hop: int):
+    def __init__(self, hop: int = 16):
         if hop <= 0:
             print(f"Hop limit {hop} is too small")
             exit(1)
         self.links = []
         self.nodes = dict()
         self.hop = hop
+        self.G = nx.Graph()
 
     def __get_node_id(self, nodeName: str, nodes: dict):
         if nodeName in nodes:
@@ -28,14 +30,20 @@ class TopologyGenerator:
             for row in tsv:
                 if len(row) == 0: continue
                 node1 = self.__get_node_id(row[0], nodes)
+                self.G.add_node(node1)
                 port1 = row[1]
                 node2 = self.__get_node_id(row[2], nodes)
+                self.G.add_node(node1)
                 port2 = row[3]
                 links.append({'n_from': node1, 'p_from': port1, 'n_to': node2, 'p_to': port2})
                 links.append({'n_from': node2, 'p_from': port2, 'n_to': node1, 'p_to': port1})
+                self.G.add_edge(node1, node2)
 
         self.links = links
         self.nodes = nodes
+
+    def diameter(self):
+        return nx.diameter(self.G)
 
     def generate_code(self) -> str:
         template = jinja_env.get_template("templates/topology.h")

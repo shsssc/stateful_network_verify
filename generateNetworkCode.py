@@ -12,22 +12,23 @@ import os
 class NetworkGenerator:
     def __init__(self, directory: str, src: str, port: int):
         self.directory = directory
-        self.topologyCode = TopologyGenerator(hop=16)
+        self.topologyCode = TopologyGenerator()
         self.topologyCode.add_forwarding_table(os.path.join(directory, "topology.txt"))
+        self.topologyCode.hop = self.topologyCode.diameter() * 3  # TTL = diameter * 3 as best effort loop detection
         self.driverCode = SrcReachabilityDriverGenerator(src, port)
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
         self.routerCodes = {}
         self.scanDir(directory)
-    
+
     def addRouterInstance(self, class_name: str):
-        if class_name not in self.routerCodes: 
+        if class_name not in self.routerCodes:
             if class_name.lower().startswith('ecmp'):
                 self.routerCodes[class_name] = EcmpRouterGenerator(class_name)
             if class_name.lower().startswith('lb'):
                 self.routerCodes[class_name] = LoadBalanceRouterGenerator(class_name)
             else:
                 self.routerCodes[class_name] = RouterGenerator(class_name)
-    
+
     def scanDir(self, directory: str):
         for item in os.scandir(directory):
             if item.is_file():
