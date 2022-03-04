@@ -1,6 +1,6 @@
 CC=clang++
 CFLAGS=-emit-llvm -c -g -O0 -Xclang -disable-O0-optnone
-REPLAY_CFLAGS=-L ../../klee_build/lib/ -lkleeRuntest -DRUN_REPLAY
+REPLAY_CFLAGS=-L ../../klee_build/lib/ -lkleeRuntest
 OBJ=test-driver.bc
 
 all: $(OBJ)

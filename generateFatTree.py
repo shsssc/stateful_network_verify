@@ -15,8 +15,9 @@ class NetworkGenerator:
             for tor in range(1, self.r + 1):
                 routerName = self.lb_prefix + ("TorP%dT%d" % (pod, tor))
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
-                    for server in range(self.r):
-                        pass#fib.write("10.%d.%d.%d/32, %d\n" % (pod, tor, server, server))
+                    for server in range(1, self.r + 1):
+                        pass # fib.write("10.%d.%d.%d/32, %d\n" % (pod, tor, server, server))
+                    fib.write("10.%d.%d.0/24, -1\n" % (pod, tor))
                     fib.write("0.0.0.0/0," + ",".join(map(str, range(self.r, self.r * 2))) + "\n")
     
     def generate_leaf_router(self):
@@ -24,8 +25,9 @@ class NetworkGenerator:
             for set in range(1, self.r + 1):
                 routerName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
-                    for tor in range(self.r):
-                        fib.write("10.%d.%d.0/24, %d\n" % (pod, tor, tor))
+                    for tor in range(1, 1 + self.r):
+                        fib.write("10.%d.%d.0/24, %d\n" % (pod, tor, tor - 1))
+                    fib.write("10.%d.0.0/16, -1\n" % (pod))
                     fib.write("0.0.0.0/0," + ",".join(map(str, range(self.r, self.r * 2))) + "\n")
     
     def generate_core_router(self):
@@ -33,8 +35,8 @@ class NetworkGenerator:
             for redendency in range(1, self.r + 1):
                 routerName = "CoreS%dR%d" % (set, redendency)
                 with open(os.path.join(self.directory, "%s.fib" % routerName), 'w') as fib:
-                    for pod in range(self.r * 2):
-                        fib.write("10.%d.0.0/16, %d\n" % (pod, pod))
+                    for pod in range(1, self.r * 2 + 1):
+                        fib.write("10.%d.0.0/16, %d\n" % (pod, pod - 1))
 
     def generate_topology(self):
         with open(os.path.join(self.directory, "topology.txt"), 'w') as edges:
@@ -45,7 +47,7 @@ class NetworkGenerator:
                     torRouterName = self.lb_prefix + ("TorP%dT%d" % (pod, tor))
                     for set in range(1, self.r + 1):
                         leafRouterName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
-                        edges.write("%s,%s,%s,%d\n" % (torRouterName, set + self.r, leafRouterName, tor))
+                        edges.write("%s,%s,%s,%d\n" % (torRouterName, set + self.r - 1, leafRouterName, tor - 1))
             edges.write("\n")
 
             # leaf-core connections
@@ -54,7 +56,7 @@ class NetworkGenerator:
                     leafRouterName = self.lb_prefix + ("LeafP%dS%d" % (pod, set))
                     for redendency in range(1, self.r + 1):
                         coreRouterName = "CoreS%dR%d" % (set, redendency)
-                        edges.write("%s,%s,%s,%d\n" % (leafRouterName, redendency + self.r, coreRouterName, pod))
+                        edges.write("%s,%s,%s,%d\n" % (leafRouterName, redendency + self.r - 1, coreRouterName, pod - 1))
             edges.write("\n")
     
     def generate_code(self):
