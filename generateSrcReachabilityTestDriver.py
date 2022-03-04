@@ -3,9 +3,10 @@ import argparse
 from util.jinjaEnv import jinja_env
 
 class SrcReachabilityDriverGenerator:
-    def __init__(self, src: str, port: int):
+    def __init__(self, src: str, port: int, hop: int):
         self.src = src
         self.port = port
+        self.hop = hop
         self.node_name_to_id = dict()
 
     def add_node_name_to_id_map(self, m: dict):
@@ -13,7 +14,7 @@ class SrcReachabilityDriverGenerator:
 
     def generate_code(self) -> str:
         template = jinja_env.get_template("templates/test-driver.cpp")
-        return template.render(src=self.node_name_to_id[self.src], port=self.port)
+        return template.render(src=self.node_name_to_id[self.src], port=self.port, hop=self.hop)
 
 
 if __name__ == "__main__":
@@ -23,10 +24,11 @@ if __name__ == "__main__":
     parser.add_argument('-p', dest='port', type=int, default=0, help='source port ID')
     parser.add_argument('-o', dest='output', default="-", help='file name of output code')
     parser.add_argument('-m', dest='map', default="", help='read router name to id map from csv')
+    parser.add_argument('-p', dest='hop', type=int, default=16, help='simulation hop limit')
 
     args = parser.parse_args()
 
-    a = SrcReachabilityDriverGenerator(args.src, int(args.port))
+    a = SrcReachabilityDriverGenerator(args.src, int(args.port), args.hop)
 
     with open(args.map, 'r') as f:
         name_to_id = dict()

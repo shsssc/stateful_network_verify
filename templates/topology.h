@@ -5,8 +5,6 @@
 #include "{{snake_case(class_name)}}.h"
 {% endfor %}
 
-#include <cstdio>
-
 class Topology {
 public:
     PktState node_execute(PktState pktState) {
@@ -32,19 +30,6 @@ public:
             return {header, {{row.n_to}}, {{row.p_to}}};
         {% endfor %}
         return {header, -1, -1};
-    }
-
-    void forward(PktState pktState) {
-        for (int hop = 0; hop < {{hop}}; hop++) {
-	    if (klee_is_replay())
-            	printf("%d %d\n", pktState.node, pktState.port);
-            pktState = node_execute(pktState);
-            if (pktState.port == PORT_DROP) return;
-            pktState = link_function(pktState);
-            if (pktState.port == PORT_DROP) return;
-        }
-	assert(0); //generated-comment: [TTL-Drop] potential loop
-        return;
     }
 
 public:

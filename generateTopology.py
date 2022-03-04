@@ -6,13 +6,9 @@ import networkx as nx
 
 
 class TopologyGenerator:
-    def __init__(self, hop: int = 16):
-        if hop <= 0:
-            print(f"Hop limit {hop} is too small")
-            exit(1)
+    def __init__(self):
         self.links = []
         self.nodes = dict()
-        self.hop = hop
         self.G = nx.Graph()
 
     def __get_node_id(self, nodeName: str, nodes: dict):
@@ -47,7 +43,7 @@ class TopologyGenerator:
 
     def generate_code(self) -> str:
         template = jinja_env.get_template("templates/topology.h")
-        return template.render(nodes=self.nodes, links=self.links, hop=self.hop, snake_case=snake_case)
+        return template.render(nodes=self.nodes, links=self.links, snake_case=snake_case)
 
     def generate_name_2_node_map(self) -> str:
         return '\n'.join([f"{k},{v}" for k, v in self.nodes.items()])
@@ -58,12 +54,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates C++ model code for network topology')
     parser.add_argument('-t', dest='table', required=True, help='file name of topology table')
     parser.add_argument('-o', dest='output', default="-", help='file name of output code')
-    parser.add_argument('-p', dest='hop', default="16", help='simulation hop limit')
     parser.add_argument('-m', dest='map', default="", help='save router to id map to csv')
 
     args = parser.parse_args()
 
-    a = TopologyGenerator(int(args.hop))
+    a = TopologyGenerator()
     a.add_forwarding_table(args.table)
     if args.output == "-":
         print(a.generate_code())

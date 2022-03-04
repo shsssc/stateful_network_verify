@@ -39,7 +39,7 @@ class RouterGenerator:
                     row_name = row[0]
                     ingress = int(default_val(row[1], -1))
                     egress = int(default_val(row[2], -1))
-                    is_allowed = row[3].lower() == 'allow'
+                    is_allowed = row[3].strip().lower() == 'allow'
                     src_prefix = decode_ip_prefix(default_val(row[4], '0.0.0.0/0'))
                     src_port = int(default_val(row[5], -1))
                     dst_prefix = decode_ip_prefix(default_val(row[6], '0.0.0.0/0'))

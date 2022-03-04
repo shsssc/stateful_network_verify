@@ -14,8 +14,7 @@ class NetworkGenerator:
         self.directory = directory
         self.topologyCode = TopologyGenerator()
         self.topologyCode.add_forwarding_table(os.path.join(directory, "topology.txt"))
-        self.topologyCode.hop = self.topologyCode.diameter() * 3  # TTL = diameter * 3 as best effort loop detection
-        self.driverCode = SrcReachabilityDriverGenerator(src, port)
+        self.driverCode = SrcReachabilityDriverGenerator(src, port, hop=self.topologyCode.diameter() * 3) # TTL = diameter * 3 as best effort loop detection
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
         self.routerCodes = {}
         self.scanDir(directory)
