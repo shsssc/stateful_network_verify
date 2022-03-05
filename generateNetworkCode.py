@@ -1,4 +1,3 @@
-import sys
 from generateEcmpRouterHeader import EcmpRouterGenerator
 from generateLoadBalanceRouterHeader import LoadBalanceRouterGenerator
 from generateTopology import TopologyGenerator
@@ -8,14 +7,11 @@ from util.snakeCase import snake_case
 import argparse
 import os
 
-
 class NetworkGenerator:
-    def __init__(self, directory: str, src: str, port: int):
+    def __init__(self, directory: str):
         self.directory = directory
         self.topologyCode = TopologyGenerator()
         self.topologyCode.add_forwarding_table(os.path.join(directory, "topology.txt"))
-        self.driverCode = SrcReachabilityDriverGenerator(src, port, hop=self.topologyCode.diameter() * 3) # TTL = diameter * 3 as best effort loop detection
-        self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
         self.routerCodes = {}
         self.scanDir(directory)
 
@@ -45,11 +41,21 @@ class NetworkGenerator:
     def generate_code(self):
         with open(os.path.join(self.directory, "topology.h"), 'w') as f:
             f.write(self.topologyCode.generate_code())
-        with open(os.path.join(self.directory, "test-driver.cpp"), 'w') as f:
-            f.write(self.driverCode.generate_code())
         for e in self.routerCodes.values():
             with open(os.path.join(self.directory, snake_case(e.name) + ".h"), 'w') as routerFile:
                 routerFile.write(e.generate_code())
+
+
+class ReachabilityCodeGenerator(NetworkGenerator):
+    def __init__(self, directory: str, src: str, port: int):
+        super().__init__(directory)
+        self.driverCode = SrcReachabilityDriverGenerator(src, port, hop=self.topologyCode.diameter() * 3) # TTL = diameter * 3 as best effort loop detection
+        self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
+
+    def generate_code(self):
+        super().generate_code()
+        with open(os.path.join(self.directory, "test-driver.cpp"), 'w') as f:
+            f.write(self.driverCode.generate_code())
         os.system('cp templates/Makefile "%s"' % self.directory)
         os.system('cp templates/common.h "%s"' % self.directory)
 
@@ -62,5 +68,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    g = NetworkGenerator(args.directory, args.src, args.port)
+    g = ReachabilityCodeGenerator(args.directory, args.src, args.port)
     g.generate_code()

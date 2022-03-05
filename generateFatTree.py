@@ -1,10 +1,8 @@
-import sys
-from util.snakeCase import snake_case
 import argparse
 import os
 
 
-class NetworkGenerator:
+class FatTreeGenerator:
     def __init__(self, directory: str, r: int, lb_prefix: str):
         self.r = r
         self.directory = directory
@@ -78,5 +76,5 @@ if __name__ == "__main__":
     if not os.path.isdir(args.directory):
         os.mkdir(args.directory)
 
-    g = NetworkGenerator(args.directory, args.redundency, args.load_balance_prefix)
+    g = FatTreeGenerator(args.directory, args.redundency, args.load_balance_prefix)
     g.generate_code()

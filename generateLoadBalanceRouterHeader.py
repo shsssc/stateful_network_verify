@@ -1,8 +1,7 @@
-import csv, sys, argparse
+import argparse
 from generateEcmpRouterHeader import MultiPortRouterGenerator
 from util.jinjaEnv import jinja_env
 from util.snakeCase import snake_case
-from util.IPPrefixDecode import decode_ip_prefix
 
 def default_val(val: str, default):
     return val if val.strip().lower() != 'any' else default

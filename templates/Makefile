@@ -3,13 +3,15 @@ CFLAGS=-emit-llvm -c -g -O0 -Xclang -disable-O0-optnone
 REPLAY_CFLAGS=-L ../../klee_build/lib/ -lkleeRuntest
 OBJ=test-driver.bc
 
+.PHONY: all klee show-tests show-stats clean
 all: $(OBJ)
 
 test-driver.bc: test-driver.cpp
 	$(CC) $(CFLAGS) $<
 
-klee: klee-last
-klee-last: $(OBJ)
+
+klee-last: klee
+klee: $(OBJ)
 	klee --optimize --write-cov $(OBJ)
 
 klee-cov: klee-last
