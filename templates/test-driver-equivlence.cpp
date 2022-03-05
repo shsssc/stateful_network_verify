@@ -35,15 +35,17 @@ int main() {
 	Network n;
 
 	for (int s = 0; s < 256; s ++) {
+		klee_open_merge();
 		header.src_port = (header.src_port & ~255) | s;
 		n.forward(PktState(header,{{src}},{{port}}));
+		klee_close_merge();
 	}
 	
 	int count_max = -1;
 	int count_min = 1 << 24;
 	{% for i in equivlent_nodes %}
 	count_max = MAX(count_max, n.counts[{{i}}]);
-	count_min = MIN(count_max, n.counts[{{i}}]);
+	count_min = MIN(count_min, n.counts[{{i}}]);
 	if (klee_is_replay())
 		printf("Count for node {{i}}: %d\n", n.counts[{{i}}]);
 	{% endfor %}

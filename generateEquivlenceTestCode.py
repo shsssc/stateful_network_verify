@@ -13,7 +13,7 @@ class EquivlenceCodeGenerator(NetworkGenerator):
         super().generate_code()
         with open(os.path.join(self.directory, "test-driver.cpp"), 'w') as f:
             f.write(self.driverCode.generate_code())
-        os.system('cp templates/Makefile "%s"' % self.directory)
+        os.system('cp templates/Makefile-equivlence "%s/Makefile"' % self.directory)
         os.system('cp templates/common.h "%s"' % self.directory)
 
 

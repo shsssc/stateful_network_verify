@@ -7,8 +7,8 @@ class {{name}} {
   public:
     static uint8_t hash(Header header) {
         uint8_t h = 0;
-        h ^= (header.src_port & 255);
-        h ^= (header.dst_port & 255);
+        h ^= (header.src_address & 255);
+        h ^= (header.dst_address & 255);
         return h;
     }
 

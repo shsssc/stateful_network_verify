@@ -8,7 +8,7 @@ def default_val(val: str, default):
 
 class LoadBalanceRouterGenerator(MultiPortRouterGenerator):
     def generate_code(self) -> str:
-        template = jinja_env.get_template("templates/load_balance_router.h")
+        template = jinja_env.get_template("templates/rr_router.h")
         return template.render(name=self.name, table=self.table, acl_table=self.acl_table, name_snake=snake_case(self.name), enumerate=enumerate)
 
 if __name__ == "__main__":
