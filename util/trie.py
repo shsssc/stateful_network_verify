@@ -9,7 +9,8 @@ class TrieNode:
     def add(self, k: str):
         if k in self.children:
             return self.children[k]
-        self.children[k] = TrieNode()
+        self.children['0'] = TrieNode()
+        self.children['1'] = TrieNode()
         return self.children[k]
 
     def is_leaf(self):
@@ -47,23 +48,25 @@ class TestTrie(unittest.TestCase):
         x.add('1')
         x.add('100')
         result = x.all_ec()
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), 6)
         self.assertIn('01', result)
         self.assertIn('100', result)
+        self.assertIn('101', result)
         self.assertIn('001', result)
+        self.assertIn('000', result)
+        self.assertIn('11', result)
 
     def test_trie2(self):
         x = Trie()
-        x.add('0000001')
-        x.add('1')
-        x.add('1')
-        x.add('0')
-        x.add('100')
-        x.add('0')
+        x.add('00000')
         result = x.all_ec()
-        self.assertEqual(len(result), 2)
-        self.assertIn('100', result)
-        self.assertIn('0000001', result)
+        self.assertEqual(len(result), 6)
+        self.assertIn('1', result)
+        self.assertIn('01', result)
+        self.assertIn('001', result)
+        self.assertIn('0001', result)
+        self.assertIn('00001', result)
+        self.assertIn('00000', result)
 
     def test_trie3(self):
         x = Trie()
