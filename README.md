@@ -17,6 +17,14 @@
 
 `make show-stats` shows line coverage.
 
+### Path balance Test
+
+`python3 generateBalanceTestCode.py -d "Example 3/" -s Router1 -p 3 -e 'Core.*'` will generate a simulator in `Example 3` folder. The simulator will start with a symbolic header at `Router1`'s port `3`, and check if the header will forward in a balance way through all router specified with the regex `'Core.*'`.
+
+`cd Example3 && make klee` symbolically executes the simulator.
+
+There may be an imalance if klee emits an assertion error. 
+
 ### generateAP
 
 The `generateAP.py` file can take node names and network configuration as input and generate c++ code that enumerates all the equivalent classes on the subset of network that contains only these nodes. 
