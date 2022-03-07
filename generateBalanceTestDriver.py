@@ -13,7 +13,7 @@ class BalanceDriverGenerator:
         self.node_name_to_id = m
 
     def generate_code(self) -> str:
-        template = jinja_env.get_template("templates/test-driver-equivlence.cpp")
+        template = jinja_env.get_template("templates/test-driver-balance.cpp")
         node_ids = list(map(lambda n : self.node_name_to_id[n], 
             filter(lambda e: re.match(self.nodesRegex, e), self.node_name_to_id.keys())))
         node_ids.sort()
