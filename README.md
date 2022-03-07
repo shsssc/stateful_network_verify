@@ -19,31 +19,13 @@
 
 ### generateAP
 
-The `generateAP.py` file can take node name and network configuration as input and generate c++ code that enumerates all the equivalent classes on the subset of network that contains only these nodes. 
+The `generateAP.py` file can take node names and network configuration as input and generate c++ code that enumerates all the equivalent classes on the subset of network that contains only these nodes. 
 
 ```shell
 python3 generateAP.py -d Example\ 3/ -c Router1,Router2,Router3
 ```
 
-Then we can go run the generated c++ model with
-
-```
-cd Example\ 3
-g++ test-driver.cpp &&./a.out
-```
-
-The output will be like
-
-```
-inNode: Router1,prefix: 00000,outNode: 0, outPort: -1
-inNode: Router1,prefix: 0000100,outNode: 0, outPort: -1
-inNode: Router1,prefix: 000010100000000000000000,outNode: -1, outPort: -1
-...
-```
-
-These information can then be used to build an interval tree that act as a LUT for the entire  node set, which allows generating optimized simulator code that corresponds to the entire node set.
-
-
+A C++ model will be automatically generated and executed to store the output of each equivalence class at `ecs.csv`
 
 **Draw back**
 
@@ -52,3 +34,13 @@ These information can then be used to build an interval tree that act as a LUT f
   * **Longest prefix matching on the destination address**
 
 Thus please do not include nodes with stateful forwarding or load balancing.
+
+### Using the generated Equivalence Classes
+
+The equivalence classes can be used when generating network code:
+
+```
+ python3 generateNetworkCode.py -d Example\ 3/ -s Router1 -p 1 -o True
+```
+
+The `-o True` will enable the generator to discover `*ecs.csv` files inside the directory and generate router code based on it. By default this optimization is off.

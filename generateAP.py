@@ -76,10 +76,12 @@ class APDriverGenerator:
         template = jinja_env.get_template("templates/ecgen-driver.cpp")
         return template.render(nodes=self.nodes, hop=self.hop, ecs=self.ecs)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates C++ model code for a network')
     parser.add_argument('-d', dest='directory', required=True, help='select config directory of the network')
     parser.add_argument('-c', dest='component', required=True, help=', seperated node names to run optimization')
+    parser.add_argument('-o', dest='output', default='ecs.csv', required=False, help='output file name')
 
     args = parser.parse_args()
 
@@ -87,7 +89,6 @@ if __name__ == "__main__":
     for c in args.component.split(','):
         component.add(c)
 
-    g = APGenerator(args.directory, component)
+    g = APGenerator(args.directory, component, args.output)
     g.generate_code()
     g.execute_model()
-

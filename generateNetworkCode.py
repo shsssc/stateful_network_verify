@@ -11,7 +11,7 @@ from typing import Set, Dict
 
 
 class NetworkGenerator:
-    def __init__(self, directory: str, use_ec_opt=True):
+    def __init__(self, directory: str, use_ec_opt=False):
         self.directory = directory
         self.useEcs = use_ec_opt
         self.routerToEcCode: Dict[str, OptimizedRouterHeaderGenerator] = dict()
@@ -60,7 +60,7 @@ class NetworkGenerator:
 
 
 class ReachabilityCodeGenerator(NetworkGenerator):
-    def __init__(self, directory: str, src: str, port: int, use_ec_opt=True):
+    def __init__(self, directory: str, src: str, port: int, use_ec_opt=False):
         super().__init__(directory, use_ec_opt)
         self.driverCode = SrcReachabilityDriverGenerator(src, port,
                                                          hop=self.topologyCode.diameter() * 3)  # TTL = diameter * 3 as best effort loop detection
