@@ -36,7 +36,7 @@ int main() {
 
 	for (int s = 0; s < 256; s ++) {
 		klee_open_merge();
-		header.src_port = (header.src_port & ~255) | s;
+		header.dest_address = (header.dest_address & ~255) | s;
 		n.forward(PktState(header,{{src}},{{port}}));
 		klee_close_merge();
 	}

@@ -1,10 +1,7 @@
-import re
-import string, csv, sys, socket, struct
-import argparse
+import re, csv, argparse
 from util.jinjaEnv import jinja_env
-from typing import List
 
-class PathEquivlenceDriverGenerator:
+class BalanceDriverGenerator:
     def __init__(self, src: str, port: int, hop: int, nodesRegex: str):
         self.src = src
         self.port = port
@@ -36,7 +33,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    a = PathEquivlenceDriverGenerator(args.src, int(args.port), args.hop, args.nodesRegex)
+    a = BalanceDriverGenerator(args.src, int(args.port), args.hop, args.nodesRegex)
 
     with open(args.map, 'r') as f:
         name_to_id = dict()

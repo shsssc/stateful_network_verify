@@ -5,8 +5,8 @@
 
 class {{name}} {
   public:
-    static uint8_t hash(Header header) {
-        uint8_t h = 0;
+    static uint8_t hash(Header header, int portIn) {
+        uint8_t h = portIn & 255;
         h ^= (header.src_address & 255);
         h ^= (header.dst_address & 255);
         return h;
@@ -16,7 +16,7 @@ class {{name}} {
         int node = stateIn.node;
         int portIn = stateIn.port;
         Header &header = stateIn.header;
-        int portOut = forwardTable(header.dst_address, hash(header)); //generated-comment: [reached] {{name}}
+        int portOut = forwardTable(header.dst_address, hash(header, portIn)); //generated-comment: [reached] {{name}}
         if (!acl(header, portIn, portOut)) return {header, node, -1};
         return {header, node, portOut};
     }

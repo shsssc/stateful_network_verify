@@ -1,5 +1,4 @@
-import string, csv, sys, socket, struct
-import argparse
+import csv, argparse
 from util.jinjaEnv import jinja_env
 
 class SrcReachabilityDriverGenerator:

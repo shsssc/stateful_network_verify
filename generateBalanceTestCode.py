@@ -1,12 +1,12 @@
 from generateNetworkCode import NetworkGenerator
-from generatePathEquivlenceTestDriver import PathEquivlenceDriverGenerator
+from generateBalanceTestDriver import BalanceDriverGenerator
 import argparse
 import os
 
 class EquivlenceCodeGenerator(NetworkGenerator):
     def __init__(self, directory: str, src: str, port: int, nodesRegex: str):
         super().__init__(directory)
-        self.driverCode = PathEquivlenceDriverGenerator(src, port, hop=self.topologyCode.diameter() * 3, nodesRegex=nodesRegex) # TTL = diameter * 3 as best effort loop detection
+        self.driverCode = BalanceDriverGenerator(src, port, hop=self.topologyCode.diameter() * 3, nodesRegex=nodesRegex) # TTL = diameter * 3 as best effort loop detection
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
 
     def generate_code(self):
