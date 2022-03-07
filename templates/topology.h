@@ -5,8 +5,16 @@
 #include "{{snake_case(class_name)}}.h"
 {% endfor %}
 
+enum Node {
+    {% for class_name, id in nodes.items() %}
+    {{class_name}}Id={{id}},
+    {% endfor %}
+};
+
+
 class Topology {
 public:
+
     PktState node_execute(PktState pktState) {
         int node = pktState.node;
         Header &header = pktState.header;

@@ -15,13 +15,16 @@ class {{name}} {
     }
 
 	int forwardTable(uint32_t dst) {
-	    {% for row in table %}
+	{% for row in table %}
             {% if row.prefix_len == 0 %}
 	    return {{row.port}};
-            {% else %}
+            {% elif not integerOptimize %}
         if ((dst >> {{32 - row.prefix_len}}) == ({{row.hex_address}} >> {{32 - row.prefix_len}})) // {{row.str_address}}/{{row.prefix_len}}
 			return {{row.port}};
-			{% endif %}
+            {% else %}
+        if (dst >= ({{row.hex_address}} & {{row.hex_mask}}) && dst <= ({{row.hex_address}} | ~{{row.hex_mask}})) // {{row.str_address}}/{{row.prefix_len}}
+			return {{row.port}};
+	    {% endif %}
         {% endfor %}
         return -1;
         //negative as drop

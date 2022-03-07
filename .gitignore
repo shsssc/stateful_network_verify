@@ -47,3 +47,5 @@ __pycache__
 Example*/*.h
 Example*/*.cpp
 Example*/Makefile
+Example*/*.bc
+Example*/*driver*

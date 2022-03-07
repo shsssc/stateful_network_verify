@@ -1,6 +1,7 @@
 import csv, argparse
 from util.jinjaEnv import jinja_env
 
+
 class SrcReachabilityDriverGenerator:
     def __init__(self, src: str, port: int, hop: int):
         self.src = src
@@ -13,7 +14,7 @@ class SrcReachabilityDriverGenerator:
 
     def generate_code(self) -> str:
         template = jinja_env.get_template("templates/test-driver.cpp")
-        return template.render(src=self.node_name_to_id[self.src], port=self.port, hop=self.hop)
+        return template.render(src=self.src + "Id", port=self.port, hop=self.hop)
 
 
 if __name__ == "__main__":
