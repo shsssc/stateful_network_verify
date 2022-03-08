@@ -15,7 +15,13 @@ class Network : public Topology {
 		for (int hop = 0; hop < {{hop}}; hop++) {
 			PktState forwardedPktState = node_execute(pktState);
 			if (forwardedPktState.port == PORT_DROP) return;
-			if (forwardedPktState.node <= {{equivlent_nodes_max}}) counts[forwardedPktState.node] ++;
+			switch (pktState.node){
+                {% for i,n in enumerate(equivlent_nodes) %}
+                case {{n}}:
+					counts[{{i}}] ++;
+					return;
+                {% endfor %}
+            }
 			pktState = link_function(forwardedPktState);
 			if (pktState.port == PORT_DROP) return;
 		}
@@ -23,7 +29,7 @@ class Network : public Topology {
 		return;
 	}
   public:
-	int counts[{{equivlent_nodes_max + 1}}];
+	int counts[{{equivlent_nodes_len}}];
 };
 
 int main() {
@@ -43,11 +49,11 @@ int main() {
 	
 	int count_max = -1;
 	int count_min = 1 << 24;
-	{% for i in equivlent_nodes %}
+	{% for i,n in enumerate(equivlent_nodes) %}
 	count_max = MAX(count_max, n.counts[{{i}}]);
 	count_min = MIN(count_min, n.counts[{{i}}]);
 	if (klee_is_replay())
-		printf("Count for node {{i}}: %d\n", n.counts[{{i}}]);
+		printf("Count for node {{n}}: %d\n", n.counts[{{i}}]);
 	{% endfor %}
 
 	klee_assert(count_max <= count_min * 2);

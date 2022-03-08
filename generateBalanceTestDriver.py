@@ -18,7 +18,7 @@ class BalanceDriverGenerator:
             filter(lambda e: re.match(self.nodesRegex, e), self.node_name_to_id.keys())))
         node_ids.sort()
         return template.render(src=self.node_name_to_id[self.src], port=self.port, hop=self.hop, 
-        equivlent_nodes=node_ids, equivlent_nodes_max=node_ids[-1])
+        equivlent_nodes=node_ids, equivlent_nodes_len=len(node_ids), enumerate=enumerate)
 
 
 if __name__ == "__main__":
