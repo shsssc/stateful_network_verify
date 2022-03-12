@@ -8,18 +8,19 @@ import ipaddress
 from generateNetworkCode import NetworkGenerator
 from util.jinjaEnv import jinja_env
 import argparse
+import re
 
 
 class APGenerator(NetworkGenerator):
-    def __init__(self, directory: str, nodes: Set[str], out_file: str = 'ecs.csv'):
+    def __init__(self, directory: str, nodes_regx: re, out_file: str = 'ecs.csv'):
         super().__init__(directory)
-        self.nodes = nodes
         self.trie = Trie()
         self.ecs = []
         self.directory = directory
+        self.nodes = self.re_to_nodes(nodes_regx)
         self.build_trie()
         self.ecs = self.all_concrete_ec()
-        self.driverCode = APDriverGenerator(nodes=nodes, hop=self.topologyCode.diameter() + 2, ecs=self.ecs)
+        self.driverCode = APDriverGenerator(nodes=self.nodes, hop=self.topologyCode.diameter() + 2, ecs=self.ecs)
         self.out_file = out_file
 
     def all_ec(self):
@@ -65,6 +66,17 @@ class APGenerator(NetworkGenerator):
         os.system(f'cd "%s" && c++ test-driver.cpp && ./a.out > "{self.out_file}"' % self.directory)
         os.remove(os.path.join(self.directory, 'a.out'))
 
+    def re_to_nodes(self, regex: str):
+        result: list = list()
+        for item in os.scandir(self.directory):
+            if item.name.endswith(".fib"):
+                class_name = item.name[:-4]
+                if re.match(regex, class_name):
+                    result.append(class_name)
+        #print(result)
+        #exit(0)
+        return result
+
 
 class APDriverGenerator:
     def __init__(self, nodes: Set[str], hop: int, ecs: list):
@@ -80,15 +92,11 @@ class APDriverGenerator:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates C++ model code for a network')
     parser.add_argument('-d', dest='directory', required=True, help='select config directory of the network')
-    parser.add_argument('-c', dest='component', required=True, help=', seperated node names to run optimization')
+    parser.add_argument('-e', dest='nodesRegex', required=True, help='regex to select node names to run optimization')
     parser.add_argument('-o', dest='output', default='ecs.csv', required=False, help='output file name')
 
     args = parser.parse_args()
 
-    component = set()
-    for c in args.component.split(','):
-        component.add(c)
-
-    g = APGenerator(args.directory, component, args.output)
+    g = APGenerator(args.directory, args.nodesRegex, args.output)
     g.generate_code()
     g.execute_model()

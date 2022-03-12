@@ -13,7 +13,7 @@ test-driver.bc: test-driver.cpp
 
 klee-last: klee
 klee: $(BC)
-	klee --optimize --write-cov $(BC)
+	klee --optimize --write-cov --search=dfs --use-fast-cex-solver $(BC)
 
 klee-cov: klee-last
 	cat klee-last/*.cov |sort | uniq|grep "\./" >  klee-last/all-tests.cov

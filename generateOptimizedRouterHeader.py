@@ -58,6 +58,15 @@ class OptimizedRouterHeaderGenerator:
             node = interval[2][0]
             port = interval[2][1]
             return f"{' ' * 4 * level}return {{header, {node}, {port}}};"
+        if r == l + 1:
+            interval = intervals[r]
+            node = interval[2][0]
+            port = interval[2][1]
+            start = interval[0]
+            end = interval[1]
+            return f"{' ' * 4 * level}if (header.dst_address >= {hex(start)})\n" \
+                   f"{' ' * (4 * level + 4)}return {{header, {node}, {port}}};\n" \
+                   f"{self.__generate_code(intervals, l, l, level + 1)}\n"
         m = (r + l) // 2
         interval = intervals[m]
         node = interval[2][0]
