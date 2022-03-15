@@ -1,0 +1,100 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
+                                                          % if you need a4paper
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
+                                                          % paper
+
+\IEEEoverridecommandlockouts                              % This command is only
+                                                          % needed if you want to
+                                                          % use the \thanks command
+\overrideIEEEmargins
+
+\usepackage[ngerman]{babel}
+\usepackage{paralist, tabularx}
+    \usepackage{subfigure}
+    \usepackage{amsmath}
+
+\usepackage{soul}
+
+\title{\LARGE \bf
+Data Plane Verification as Program Verification
+}
+
+
+\author{Siqi Liu,
+Sichen Song
+}
+
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+
+\begin{document}
+
+
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+
+\section{INTRODUCTION}
+Data plane verification is an emerging field of computer networking, in which the behavior of network data plane is verified to follow a specification. 
+
+To perform data plane verification, the network topology and forwarder configurations are typically encoded into a model, which is checked against the specification. For example, the Header Space Analysis (HSA) encodes the network nodes into functions on packet state, which consists of packet header and packet location. HSA then simulates a symbolic packet being forwarded through the network model to verify reachability and other properties. Anteater, on the other hand, models the network and its specification as SAT formulas on the packet header and reduces the network verification problem into a SAT problem, which can be solved using existing SAT solvers such as Z3.
+
+The existing works focuses on verifying stateless network nodes and consequently does not work on networks with stateful load balancers or NAT boxes. Although data plane specification language has been proposed in NoD and NetPlumber, the languages has limited expressiveness and requires times for network operators to learn. Lastly, the generated model is hard to understand or debug due to extensive use of logical formulas.
+
+To address the above issues, we investigation into modeling the data plane as a computer program and utilizing existing symbolic execution tool, KLEE, to verify network properties. In the following sections, we provide the rationale behind reducing network verification into a program verification. We then present a design to  generate a C++ based network simulator that answers a specific network verification question based on network topology, node configurations, and the verification question. We also propose potential optimizations that could potentially use pre-computation to improve the performance of verification. Lastly we evaluate the design and optimization in generated network typologies to understand its correctness and performance.
+
+
+\section{Rationale}\label{sec:rationale}
+
+\section{Code Generation}\label{sec:codegen}
+
+Mention that we generated special comments and use coverage.
+
+\subsection{Network topology}
+
+\subsection{Stateless Network Routers}
+
+\subsection{Reachability Query}
+
+\subsection{Loop Detection Query}
+
+\subsection{Stateful Nodes}
+
+\subsection{Other Queries}
+
+\section{Optimization}\label{sec:opt}
+
+\section{Evaluation}\label{sec:eval}
+
+\section{FUTURE DIRECTION}\label{sec:fd}
+We identified that the AIAD strategy converges slowly. Thus, we hope to look into how to boost its performance. Also, we hope to simulate the designs in other more complicated scenarios to better understand the limitations of these strategies. Some scenarios we hope to start with are more than three upstreams, using active consumer, and also having bottleneck being shared upstream among two forwarders.
+\section{CONCLUSIONS}\label{sec:c}
+In this short report, we discuss our multipath forwarding strategy design that aim to effectively use the available bandwidth of multiple paths. The strategies using queuing delay and rate measurements to decide the proportion of traffic to split to each upstream. Our evalution shows that an AIAD strategy, while being conservative and converges slowly, can split the traffic along different paths according to their available bandwidth. In the future, we hope to evaluate the design in more complicated scenarios to better understand and improve its performance.
+
+
+
+
+\addtolength{\textheight}{-12cm}  
+
+
+\begin{thebibliography}{99}
+
+\bibitem{c1}Giovanna Carofiglio, Massimo Gallo, Luca Muscariello,
+Optimal multipath congestion control and request forwarding in information-centric networks: Protocol design and experimentation,
+Computer Networks,
+Volume 110,
+2016,
+Pages 104-117,
+ISSN 1389-1286,
+https://doi.org/10.1016/j.comnet.2016.09.012.
+ 
+\end{thebibliography}
+\end{document}
+
