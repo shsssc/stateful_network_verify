@@ -26,4 +26,14 @@ struct PktState {
             port(p) {}
 };
 
+uint8_t shared_symbolic_state[256];
+uint32_t used_state_len = 0;
+
+uint8_t *getSymbolicState(uint32_t size) {
+    uint8_t * a = shared_symbolic_state + used_state_len;
+    used_state_len += size;
+    return a;
+}
+
+
 #endif

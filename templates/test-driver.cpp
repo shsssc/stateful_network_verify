@@ -27,6 +27,7 @@ class Network : public Topology {
 int main() {
 	Header header;
 	klee_make_symbolic(&header, sizeof(header), "header");
+	klee_make_symbolic(&shared_symbolic_state, sizeof(shared_symbolic_state), "shared_symbolic_state");
 
 	Network n;
 	n.forward(PktState(header,{{src}},{{port}}));

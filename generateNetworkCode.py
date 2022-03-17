@@ -1,5 +1,6 @@
 from generateEcmpRouterHeader import EcmpRouterGenerator
 from generateRoundRobinRouterHeader import RoundRobinRouterGenerator
+from generateDynamicNatRouterHeader import DynamicNatGenerator
 from generateTopology import TopologyGenerator
 from generateRouterHeader import RouterGenerator
 from generateSrcReachabilityTestDriver import SrcReachabilityDriverGenerator
@@ -26,6 +27,8 @@ class NetworkGenerator:
                 self.routerCodes[class_name] = EcmpRouterGenerator(class_name)
             elif class_name.lower().startswith('rr'):
                 self.routerCodes[class_name] = RoundRobinRouterGenerator(class_name)
+            elif class_name.lower().startswith('nat'):
+                self.routerCodes[class_name] = DynamicNatGenerator(class_name)
             else:
                 self.routerCodes[class_name] = RouterGenerator(class_name)
 
