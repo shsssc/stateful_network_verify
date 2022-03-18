@@ -1,0 +1,5 @@
+DenySet1,    Any, Any, Deny,  Any,         Any, 10.0.1.0/24, Any, Any
+DenyHTTP,    Any, Any, Deny,  Any,         Any, Any        , 80,  6
+DenyDNSOut,  Any, Any, Deny,  Any,         53,  Any        , Any, 17
+DenySet1Out, Any, Any, Deny,  10.0.1.0/24, Any, Any        , Any, Any
+Default,     Any, Any, Allow, Any,         Any, Any,         Any, Any
