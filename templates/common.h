@@ -13,6 +13,16 @@ struct Header {
     uint8_t protocol;
     uint16_t src_port;
     uint16_t dst_port;
+
+    void reverse() {
+        uint32_t tmp = src_address;
+        src_address = dst_address;
+        dst_address = tmp;
+
+        uint16_t tmp2 = src_port;
+        src_port = dst_port;
+        dst_port = tmp2;
+    }
 };
 
 struct PktState {

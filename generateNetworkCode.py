@@ -63,10 +63,10 @@ class NetworkGenerator:
 
 
 class ReachabilityCodeGenerator(NetworkGenerator):
-    def __init__(self, directory: str, src: str, port: int, use_ec_opt=False):
+    def __init__(self, directory: str, src: str, port: int, use_ec_opt=False, stateful_main=False):
         super().__init__(directory, use_ec_opt)
         self.driverCode = SrcReachabilityDriverGenerator(src, port,
-                                                         hop=self.topologyCode.diameter() * 3)  # TTL = diameter * 3 as best effort loop detection
+                                                         hop=self.topologyCode.diameter() * 3, stateful=stateful_main)  # TTL = diameter * 3 as best effort loop detection
         self.driverCode.add_node_name_to_id_map(self.topologyCode.nodes)
 
     def generate_code(self):
@@ -84,7 +84,8 @@ if __name__ == "__main__":
     parser.add_argument('-p', dest='port', type=int, default=0, help='src port')
     parser.add_argument('-o', dest='optimize', type=bool, default=False,
                         help='search for csv files that treat network boxes as components to save computation')
+    parser.add_argument('--stateful', action='store_true', dest='stateful', default=False, help='check for stateful reachability')
     args = parser.parse_args()
 
-    g = ReachabilityCodeGenerator(args.directory, args.src, args.port, args.optimize)
+    g = ReachabilityCodeGenerator(args.directory, args.src, args.port, args.optimize, stateful_main=args.stateful)
     g.generate_code()
