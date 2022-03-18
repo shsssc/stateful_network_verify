@@ -44,10 +44,10 @@ To perform data plane verification, the network topology and forwarder configura
 
 The existing works focuses on verifying stateless network nodes and consequently does not work on networks with stateful load balancers or NAT boxes. Although data plane specification language has been proposed in NoD~\cite{nod} and NetPlumber~\cite{netp}, the languages has limited expressiveness and requires times for network operators to learn. Lastly, the generated model is hard to understand or debug due to extensive use of logical formulas.
 
-To address the above issues, we investigation into modeling the data plane as a computer program and utilizing existing symbolic execution tool, KLEE~\cite{klee}, to verify network properties. In the following sections, we provide the rationale behind reducing network verification into a program verification in \S~\ref{sec:rationale}. We then present the architecture of our verifier that reduce network verification into program verification in \S ~\ref{sec:overall}. We dive into details of code generation in \S~\ref{sec:codegen}. We also propose potential optimizations that could potentially use pre-computation to improve the performance of verification in \S~\ref{sec:opt}. Lastly we discuss the evaluation results in \S~\ref{sec:eval}.
+To address the above issues, we investigation into modeling the data plane as a computer program and utilizing existing symbolic execution tool, KLEE~\cite{klee}, to verify network properties. In the following sections, we provide the feasibility of reducing network verification into a program verification in \S~\ref{sec:feasibility}. We then present the architecture of our verifier that reduce network verification into program verification in \S ~\ref{sec:overall}. We dive into details of code generation in \S~\ref{sec:codegen}. We also propose potential optimizations that could potentially use pre-computation to improve the performance of verification in \S~\ref{sec:opt}. Lastly we discuss the evaluation results in \S~\ref{sec:eval}.
 
 
-\section{Rationale}\label{sec:rationale}
+\section{Feasibility Analysis}\label{sec:feasibility}
 
 Symbolic execution for program verification models program input as a set of potential values and explores the control flow graph of the program by executing the program and adding path constrains to the symbolic variables whenever having conditional statements. By keeping track of a set of potential input that leads to certain execution path, feasibility of  execution path can be calculated by checking whether the path conditions is satisfiable. In this way, by exploring all reachable execution paths, the program can be verified.
 
@@ -63,6 +63,12 @@ This similarity motivates us to explore the idea of transforming the network ver
   \item The generated network simulator can be executed with concrete packet input, which can be reused to debug network configurations by visualizing packet forwarding.
 \end{enumerate}
 
+However, verifying data plane relying on program verification has the following disadvantages:
+
+\begin{enumerate}
+ \item Existing program verification tools are used as black boxes. Consequently there's less chance to apply domain knowledge to fine tune the implementation details for performance optimization.
+ \item Program verification solves path constrains with SMT solver such as Z3, which only gives a single example for each property violation.
+\end{enumerate}
 
 \section{Overall Design}\label{sec:overall}
 The overall design of our network verification framework is illustrated in fig.~\ref{fig:arch}. 
@@ -71,7 +77,6 @@ To reduce data plane verification into program verification, code generation is 
 
 These generated C++ code will be compiled into LLVM intermediate representation (IR) using the LLVM C++ front end Clang++. These IR is then used by KLEE for symbolic execution. KLEE will invoke LLVM optimization passes on the input IR and symbolically execute the program to maximize line coverage and check if it can fail any assertion in the program. The resulting coverage file is then fed into a post processing script to check if the property-to-verify is maintained by the network. The generated comments by code generators acts has hints for the post processor to better understand the coverage and thus make verification decisions.
 
-\sichen{mention the limitations: black box KLEE. One solution.}
 \begin{figure}[]
   \centering
   \includegraphics[width=\linewidth]{overview.png}
@@ -105,7 +110,7 @@ Stateless network Routers are generated based on their FIB and ACL configuration
 
 \begin{lstlisting}[
   language=C,
-  caption=Packet State,
+  caption=packet state,
   label=code:stateless-router,
   captionpos=b,
   basicstyle=\small]
@@ -150,7 +155,7 @@ class Router4 {
 The network with connectivity and node is generated as a C++ class, which instantiates all the nodes and expose a function that takes a packet state and makes one step of packet forwarding. The input packet is first processed by the corresponding forwarder to be transformed to an output packet. Then, by looking up network connectivity, the output packet is moved to the input port of the other end of the link.  Listing~\ref{code:topology} shows a generated network class.
 
 \begin{lstlisting}[  language=C,
-  caption=Packet State,
+  caption=generated network class,
   label=code:topology,
   captionpos=b,
   basicstyle=\small]
@@ -191,10 +196,10 @@ class Topology {
 
 \subsection{Reachability Query Test Driver}
 The reachability query test driver simply injects a symbolic packet at the user-selected node and simulate the packet forwarding until the packet exits or TTL runs out. KLEE will enumerate the entire header space trying to cover every line of code, which includes the forward method of each node object. Thus, the coverage report of KLEE can be used to infer if a node is reachable by checking if its corresponding class and method is covered. To cover a reasonable number of packet forwarding while bounding the main loop for packet forwarding, we set the TTL to be two times the diameter of the network topology.
-Listing~\ref{code:reachability-driver} shows a generated network class.
+Listing~\ref{code:reachability-driver} shows a generated reachability test driver.
 
 \begin{lstlisting}[  language=C,
-  caption=Packet State,
+  caption=generated reachability/loop test driver,
   label=code:reachability-driver,
   captionpos=b,
   basicstyle=\small]
@@ -224,7 +229,7 @@ class Network : public Topology {
 int main() {
   Header header;
   klee_make_symbolic(&header, 
-  	sizeof(header), "header");
+   sizeof(header), "header");
   
   Network n;
   n.forward(PktState(header,Router1Id,0));
@@ -240,8 +245,85 @@ Intuitively, loop detection should check if a packet reenters a router. However,
 \subsection{Other Queries}
 
 \subsection{Optimization}\label{sec:opt}
-\sichen{todo:}
+The goal of optimization in code generation is to reduce unnecessary number of instructions, especially branches. Our optimization focuses on the common case of longest prefix matching based stateless routers without ACL or ECMP. There are two aspects of optimization we hope to achieve. Firstly, the routing table lookup has lots of branches and we hope to improve the performance by both compressing the routing table and using a efficient lookup algorithm. Secondly, a group of routers can be replaced as a single node with the same behavior from the outside point of view. This grouping of nodes and abstracting them as a single one allows joint optimization and lookup of all the FIBs in this group.
 
+To achieve this goal, equivalence classes are first generated from forwarding tables of the selected group of nodes using atomic predicate. Then, a concrete packet of each equivalence class is injected to each the nodes in the group in the generated network simulator to find where packets of the equivalence class exits the group. Lastly, giving a set of <equivalence class, input node, output node, output port>, we generate a C++ Router class that forwards the packet by looking up a equivalence class based lookup table using binary search on ranges~\cite{binary_search_lookup}.
+
+Figure~\ref{fig:opt} shows the implementation of the optimization procedure. Other than the network configuration, the user also provides a group of nodes to act as a "component" that will be optimized to a single node. Equivalence classes will be generated first using a bit trie with the idea of Atomic Predicate. For each of the equivalence class, a concrete packet is also generated. With these information, a network simulator will be generated that injects a concrete packet of each equivalence class to each node in the group. The execution of the simulator will record where each of these injected packet exit the group of nodes. The output is then used to generate a single node class that make forwarding decision by looking up the input equivalence class using binary search on ranges.
+
+By merging consecutive ranges having the same forwarding result before generating code for binary search, the routing table can effectively be compressed.
+
+\begin{figure}[]
+ \centering
+ \includegraphics[width=\linewidth]{optimization.png}
+ \caption{Optimization Implementation}
+ \label{fig:opt}
+\end{figure}
+
+Listing~\ref{code:opt} shows a generated optimized router class. The nested if are the inlined binary search procedure.
+
+\begin{lstlisting}[  language=C,
+ caption=Optimization of Router: Binary Search on Ranges,
+ label=code:opt,
+ captionpos=b,
+ basicstyle=\tiny]
+class LeafP19S3 {
+ public:
+ PktState forward(PktState stateIn) { //generated-comment: [reached] LeafP19S3
+  int node = stateIn.node;
+  int portIn = stateIn.port;
+  Header &header = stateIn.header;
+  if (header.dst_address >= 0xa130600 && header.dst_address <= 0xa1306ff)
+  return {header, 449, -1};
+  else if (header.dst_address < 0xa130600) {
+   if (header.dst_address >= 0xa130200 && header.dst_address <= 0xa1302ff)
+   return {header, 445, -1};
+   else if (header.dst_address < 0xa130200) {
+    if (header.dst_address >= 0xa130000 && header.dst_address <= 0xa1300ff)
+    return {header, 435, -1};
+    else if (header.dst_address < 0xa130000) {
+     return {header, 435, 12};
+    } else {
+     return {header, 432, -1};
+    }
+   } else {
+    if (header.dst_address >= 0xa130400 && header.dst_address <= 0xa1304ff)
+    return {header, 447, -1};
+    else if (header.dst_address < 0xa130400) {
+     return {header, 446, -1};
+    } else {
+     return {header, 448, -1};
+    }
+   }
+  } else {
+   if (header.dst_address >= 0xa130a00 && header.dst_address <= 0xa130aff)
+   return {header, 453, -1};
+   else if (header.dst_address < 0xa130a00) {
+    if (header.dst_address >= 0xa130800 && header.dst_address <= 0xa1308ff)
+    return {header, 451, -1};
+    else if (header.dst_address < 0xa130800) {
+     return {header, 450, -1};
+    } else {
+     return {header, 452, -1};
+    }
+   } else {
+    if (header.dst_address >= 0xa130c00 && header.dst_address <= 0xa130cff)
+    return {header, 455, -1};
+    else if (header.dst_address < 0xa130c00) {
+     return {header, 454, -1};
+    } else {
+     if (header.dst_address >= 0xa140000)
+     return {header, 435, 12};
+     return {header, 435, -1};
+     
+    }
+   }
+  }
+  assert(0);
+ }
+};
+
+\end{lstlisting}
 \section{Evaluation}\label{sec:eval}
 
 \section{FUTURE DIRECTION}\label{sec:fd}
