@@ -46,6 +46,7 @@ The existing works focuses on verifying stateless network nodes and consequently
 
 To address the above issues, we investigation into modeling the data plane as a computer program and utilizing existing symbolic execution tool, KLEE~\cite{klee}, to verify network properties. In the following sections, we provide the feasibility of reducing network verification into a program verification in \S~\ref{sec:feasibility}. We then present the architecture of our verifier that reduce network verification into program verification in \S ~\ref{sec:overall}. We dive into details of code generation in \S~\ref{sec:codegen}. We also propose potential optimizations that could potentially use pre-computation to improve the performance of verification in \S~\ref{sec:opt}. Lastly we discuss the evaluation results in \S~\ref{sec:eval}.
 
+The verification tool code is available at https://github.com/shsssc/stateful\_network\_verify.
 
 \section{Feasibility Analysis}\label{sec:feasibility}
 
@@ -53,7 +54,8 @@ Symbolic execution for program verification models program input as a set of pot
 
 Symbolic execution is similar to Header Space Analysis(HSA) as they both use equivalence classes of input to ensure efficient and comprehensive exploration a directed graph. Both of them also reason about reachability in the graph by transforming the problem as a satisfiability problem of path condition.
 
-This similarity motivates us to explore the idea of transforming the network verification problem into a program verification problem and transform network reachability and other properties to verify into code reachability. The idea can be implemented by generating the network configuration and verification problem into a network simulator on symbolic packet inputs. This reduction can have the following advantages:
+This similarity motivates us to explore the idea of transforming the network verification problem into a program verification problem and transform network reachability and other properties to verify into code reachability. 
+The idea can be implemented by generating the network configuration and verification problem into a network simulator on symbolic packet inputs. This reduction can have the following advantages:
 
 \begin{enumerate}
   \item The generated model is a network simulator written in C++, which is easier to understand and debug compared to logical formula based modeling.
@@ -73,9 +75,15 @@ However, verifying data plane relying on program verification has the following 
 \section{Overall Design}\label{sec:overall}
 The overall design of our network verification framework is illustrated in fig.~\ref{fig:arch}. 
 
-To reduce data plane verification into program verification, code generation is extensively used. Overall there are three different types of code generators: the network node generator, the topology generator, and verification generator. Network node generator generates forwarders and other nodes in the network from its configurations such as FIBs and ACLs. A variety of node types is supported such as ECMP routers and stateful NAT boxes. Topology generator generates the code that takes a packet state (header, location) as input and move a packet through the network for one step. The packet is first fed into the corresponding forwarder to make a forwarding action. The output packet is then transformed into a input packet of the next hop by looking up the network topology. Lastly, the verification generator will generate the "main function" that injects symbolic packets into the network and keep forwarding it through the network. The most import part of it is the main loop that keeps forwarding packets step by step using the topology generator. Depending on the property to verify, the generator may also record of packet paths and other states for later property checks. The code generators may embed comments in the generated code to facilitate post-processing.
+To reduce data plane verification into program verification, code generation is extensively used. 
+Code generator is the primary part of reducing data plane verification into program verification. 
+The generators will generate a executable C++ program that asserts the property-to-verify with symbolic packet inputs such that symbolic execution can later be used to check these assertions. 
+The output C++ code is also annotated with generated comments serving as hints to help the poster processor to translate code coverage report from KLEE into network verification results.
 
-These generated C++ code will be compiled into LLVM intermediate representation (IR) using the LLVM C++ front end Clang++. These IR is then used by KLEE for symbolic execution. KLEE will invoke LLVM optimization passes on the input IR and symbolically execute the program to maximize line coverage and check if it can fail any assertion in the program. The resulting coverage file is then fed into a post processing script to check if the property-to-verify is maintained by the network. The generated comments by code generators acts has hints for the post processor to better understand the coverage and thus make verification decisions.
+These generated C++ code will be compiled into LLVM intermediate representation (IR) using the LLVM C++ front end Clang++. 
+These IR is then used by KLEE for symbolic execution. KLEE will invoke LLVM optimization passes on the input IR and symbolically execute the program to maximize line coverage and check if it can fail any assertion in the program. 
+The resulting coverage file is then fed into a post processing script to check if the property-to-verify is maintained by the network. 
+The generated comments by code generators acts has hints for the post processor to better understand the coverage and thus make verification decisions.
 
 \begin{figure}[]
   \centering
@@ -85,9 +93,25 @@ These generated C++ code will be compiled into LLVM intermediate representation 
 \end{figure}
 
 \section{Code Generation}\label{sec:codegen}
-Code generator is the primary part of reducing data plane verification into program verification. The generators will generate a  executable C++ program that asserts the property-to-verify with symbolic packet inputs such that symbolic execution can later be used to check these assertions. The code is also annotated with generated comments serving as hints to help the poster processor to translate code coverage report from KLEE into network verification results.
+
+Overall there are three different types of code generators: the network node generator, the topology generator, and verification generator. 
+Network node generator generates forwarders and other nodes in the network from its configurations such as FIBs and ACLs. 
+A variety of node types is supported such as ECMP routers and stateful NAT boxes. 
+Topology generator generates the code that takes a packet state (header, location) as input and move a packet through the network for one step. 
+The packet is first fed into the corresponding forwarder to make a forwarding action. 
+The output packet is then transformed into a input packet of the next hop by looking up the network topology. 
+Lastly, the verification generator will generate the "main function" that injects symbolic packets into the network and keep forwarding it through the network. 
+The most import part of it is the main loop that keeps forwarding packets step by step using the topology generator. 
+Depending on the property to verify, the generator may also record of packet paths and other states for later property checks. 
+The code generators may embed comments in the generated code to facilitate post-processing.
+
+The code generator are written with Python, and they uses jinja template library to insert required config parameter to the code template. 
+These code generator are designed as modular classes, so that the operator can use a single script to invoke node, topology and verification generator for corresponding config information, and complete the verification. 
+
 \subsection{Constrains}
-Symbolic execution can perform poorly when the program has large loops, requires variable length in-memory data structures, or make many unnecessary branches. Being aware of these limitations, code generator of this framework inlines table (for example, FIB) lookup as a sequence of branches, instead of relying on in-memory data structures. It also bounds all loops to bound the total amount of execution paths. 
+Symbolic execution can perform poorly when the program has large loops, requires variable length in-memory data structures, or make many unnecessary branches. 
+Being aware of these limitations, code generator of this framework inlines table (for example, FIB) lookup as a sequence of branches, instead of relying on in-memory data structures. 
+It also bounds hop limit to bound the total amount of execution paths. 
 
 \subsection{Packet State}
 Inspired by HSA~\cite{hsa}, the packet state is the combination of header and location as shown in listing \ref{code:state}.
@@ -240,10 +264,63 @@ int main() {
 
 \subsection{Loop Detection Query}
 Intuitively, loop detection should check if a packet reenters a router. However, to minimize the states and simplify the problem, we detect loop by checking for TTL violations. By settings a TTL much larger than network diameter and checking for TTL drop. Loops can be detected. The loop detection test driver is exactly the same as the reachability query test driver in listing~\ref{code:reachability-driver}. Note that the generated comment \emph{[TTL-Drop] potential loop} is used for post processors to identify the test packet that could trigger loop.
+
 \subsection{Stateful Nodes}
-\siqi{todo}
+\label{sec:stateful}
+Many networks may also have stateful nodes, such as dynamic NAT routers or round-robin load balancers. 
+The challenge of verifying such boxes is that the previous packets may cause the forwarding behavior to change in later packets. 
+Therefore, instead of needing to send a single packet, a sequence of packets may be required to completely verify this. 
+According to \cite{stateful_verification_complexity}, the complexity of verifying a stateful middlebox may increase to CoNP or EXPSPACE-complete from polynomial time, depending on the property of the middlebox function itself. 
+Verifying networks containing such nodes are still a challenge for our verification tool\cite{stateful_verification_complexity}, we try to mitigate the problem with the following approaches:
+
+\begin{itemize}
+  \item Converting to non-stateful nodes. 
+  Some of the nodes may be approximated with non-stateful routers. 
+  For example, the per-packet round-robin load balancer can be replaced with a hash-based load balancer, and dynamic NAT can be approximated with static NAT functions. 
+  This approach is efficient, but it can only be used on a case-by-case basis, and some of the original errors may not be caught after the conversion. 
+  \item Use symbolic states with injecting single packet. 
+  In some of the cases like stateful firewall or NAT, we can directly place the state of the router as symbolic. 
+  Then, the verification will run with both the packet used and the state of these nodes. 
+  However, this verification may have a false positive, when the verifier tries un-reachable states and therefore requires manual review of the outputted states. 
+  \item Injecting multiple packets. 
+  This is the more complete solution to verify the stateful nodes. 
+  However, the KLEE solver runtime is exponential to the number of packets inject, as the length of the symbolic components to verify is growing. 
+  However, by selecting some typical sequence of packets, we can test the behavior of the network. 
+  For example, for dynamic NAT boxes, we can choose an outbound packet, its reversed packet as a reply, and a repetition of the initial packet, and this will suffice as a basic test of consistency in the network. 
+\end{itemize}
+
+None of the methods we currently have are sophisticated enough to scale in arbitrary stateful middleboxes, so the boxes need to be analyzed before placing them into the verification tool. 
+In the future, there may be more sophisticated approaches that can be implemented with our current design, but it requires an overhaul of the verification pipeline. 
+
+For example, using the approach in NetSMC\cite{NetSMC}, we could use our verification tool to find the symbolic last packet $P_1$ and corresponding middlebox state $S_1$ that violates our verification property, 
+then find the previous packet $P_2$ that causes the router to enter the state $S_1$. 
+By looping this procedure on "finding the last packet", we can trace to the initial state of the router, and therefore find the sequence that may cause network failure, as well as the state sequence that leads to the problem.
+However, for our current implementation, such verification may need multiple uses of the code generator and KLEE, and therefore hard to perform in the limited time of the project.
+
 \subsection{Other Queries}
-\siqi{todo or remove section}
+
+With the use of the code generator and KLEE, we hope that the approach can be easily generalized to new network architecture/protocols, as well as new queries to be verified in the network. 
+For example, we try to verify the effectiveness of load balancers: for any packet going, it has the same chance of using all the equivalent routers. 
+
+To achieve this, we can generate a new main function that sends symbolic packets N times and count the number of packets through the equivalent routers. 
+Using this approach, we found that our implementation of the fat-tree structure failed to send packets equally to all core routers. 
+This is because by hash polarization, where when we use multiple layers of ECMP load balancing, all the packets with the same hash basket are sent to the same path, so subsequent routers cannot split them with the same hash function. 
+An illustration of this problem is \ref{fig:hash_polar} from \cite{huawei-hash}.
+
+\begin{figure}[]
+  \centering
+  \includegraphics[width=\linewidth]{hash-polar.png}
+  \caption{The Hash Polarization Issue}
+  \label{fig:hash_polar}
+\end{figure}
+
+As we realize the first method has a flaw in that it depends on the implementation of the routers, as have designed a second structure. 
+In this design, the routers can forward packets to multiple ports, but each forwarding contains a probability value. 
+That is, a 2-way load balancer will send packets both ways with a "probability value" of 1/2. 
+This allows us to analyze the amount of traffic through each equivalent router easily. 
+However, this approach may not be able to verify the problem caused by the internals of routers, like hash polarization. 
+It is only verifying that no path does not pass through even load balancing. 
+
 \subsection{Optimization}\label{sec:opt}
 The goal of optimization in code generation is to reduce unnecessary number of instructions, especially branches. Our optimization focuses on the common case of longest prefix matching based stateless routers without ACL or ECMP. There are two aspects of optimization we hope to achieve. Firstly, the routing table lookup has lots of branches and we hope to improve the performance by both compressing and aggregating the routing table while using a efficient lookup algorithm. Secondly, a group of routers can be replaced as a single node with the same behavior from the outside point of view. This grouping of nodes and abstracting them as a single one allows joint optimization and lookup of all the routing tables in this group.
 
@@ -357,6 +434,21 @@ The result for the grouping, however, shows that the optimization is \textbf{not
 \end{table}
 
 \section{FUTURE DIRECTION}\label{sec:fd}
+
+In the future, we may explore further optimizations to make the verification more scalable. These optimization may include:
+
+\textbf{Exploring loop merging in klee}. 
+The Klee symbolic execution will create new branches in the execution tree, and as the forwarding path branches, the number of the path will grow quickly. 
+This is known as the state explosion problem. 
+One of the mitigation approaches is to merge paths, so that the states sharing subsequent execution paths, or forwarding paths in our case, can be executed together. 
+We have explored the use of a path merging mechanism included in Klee for our code, but it does not bring a large performance gain. 
+Therefore, one of the future directions is to build a path merger that works well for our specific scenario of packet forwarding. 
+
+\textbf{Using NetSMC-like sequence search for stateful networks}.
+As discussed in \ref{sec:stateful}, NetSMC\cite{NetSMC} proposes a search for property violating packet sequence by repeatedly finding the last packet that moves the network into the erroneous state. 
+This approach efficiently eliminates the un-interesting path in the execution and therefore scales better than the approach of injecting multiple symbolic packets into the model network. 
+In the future, we hope to use a similar search technique for stateful network verification. 
+To achieve this, we may need a tighter coupling between Klee and the code generation. 
 
 \section{CONCLUSIONS}\label{sec:c}
 
