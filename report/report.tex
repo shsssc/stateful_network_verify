@@ -66,7 +66,7 @@ This similarity motivates us to explore the idea of transforming the network ver
 However, verifying data plane relying on program verification has the following disadvantages:
 
 \begin{enumerate}
- \item Existing program verification tools are used as black boxes. Consequently there's less chance to apply domain knowledge to fine tune the implementation details for performance optimization.
+ \item Existing program verification tools are used as black boxes. Consequently there's less opportunity to apply domain knowledge to fine tune the implementation details for optimization.
  \item Program verification solves path constrains with SMT solver such as Z3, which only gives a single example for each property violation.
 \end{enumerate}
 
@@ -110,7 +110,7 @@ Stateless network Routers are generated based on their FIB and ACL configuration
 
 \begin{lstlisting}[
   language=C,
-  caption=packet state,
+  caption=generated stateless router,
   label=code:stateless-router,
   captionpos=b,
   basicstyle=\small]
@@ -196,7 +196,7 @@ class Topology {
 
 \subsection{Reachability Query Test Driver}
 The reachability query test driver simply injects a symbolic packet at the user-selected node and simulate the packet forwarding until the packet exits or TTL runs out. KLEE will enumerate the entire header space trying to cover every line of code, which includes the forward method of each node object. Thus, the coverage report of KLEE can be used to infer if a node is reachable by checking if its corresponding class and method is covered. To cover a reasonable number of packet forwarding while bounding the main loop for packet forwarding, we set the TTL to be two times the diameter of the network topology.
-Listing~\ref{code:reachability-driver} shows a generated reachability test driver.
+Listing~\ref{code:reachability-driver} shows a generated reachability test driver. It can be seen that this test driver prints out the path a packet traverses when a concrete packet is used to run simulation. 
 
 \begin{lstlisting}[  language=C,
   caption=generated reachability/loop test driver,
@@ -241,17 +241,17 @@ int main() {
 \subsection{Loop Detection Query}
 Intuitively, loop detection should check if a packet reenters a router. However, to minimize the states and simplify the problem, we detect loop by checking for TTL violations. By settings a TTL much larger than network diameter and checking for TTL drop. Loops can be detected. The loop detection test driver is exactly the same as the reachability query test driver in listing~\ref{code:reachability-driver}. Note that the generated comment \emph{[TTL-Drop] potential loop} is used for post processors to identify the test packet that could trigger loop.
 \subsection{Stateful Nodes}
-
+\siqi{todo}
 \subsection{Other Queries}
-
+\siqi{todo or remove section}
 \subsection{Optimization}\label{sec:opt}
-The goal of optimization in code generation is to reduce unnecessary number of instructions, especially branches. Our optimization focuses on the common case of longest prefix matching based stateless routers without ACL or ECMP. There are two aspects of optimization we hope to achieve. Firstly, the routing table lookup has lots of branches and we hope to improve the performance by both compressing the routing table and using a efficient lookup algorithm. Secondly, a group of routers can be replaced as a single node with the same behavior from the outside point of view. This grouping of nodes and abstracting them as a single one allows joint optimization and lookup of all the FIBs in this group.
+The goal of optimization in code generation is to reduce unnecessary number of instructions, especially branches. Our optimization focuses on the common case of longest prefix matching based stateless routers without ACL or ECMP. There are two aspects of optimization we hope to achieve. Firstly, the routing table lookup has lots of branches and we hope to improve the performance by both compressing and aggregating the routing table while using a efficient lookup algorithm. Secondly, a group of routers can be replaced as a single node with the same behavior from the outside point of view. This grouping of nodes and abstracting them as a single one allows joint optimization and lookup of all the routing tables in this group.
 
-To achieve this goal, equivalence classes are first generated from forwarding tables of the selected group of nodes using atomic predicate. Then, a concrete packet of each equivalence class is injected to each the nodes in the group in the generated network simulator to find where packets of the equivalence class exits the group. Lastly, giving a set of <equivalence class, input node, output node, output port>, we generate a C++ Router class that forwards the packet by looking up a equivalence class based lookup table using binary search on ranges~\cite{binary_search_lookup}.
+To achieve this goal, equivalence classes are first generated from routing tables of the selected group of nodes using atomic predicate~\cite{ap}. Then, a concrete packet of each equivalence class is injected to each the nodes in the group in the generated network simulator to find where packets of the equivalence class exits the group. Lastly, giving a set of <equivalence class, input node, output node, output port>, we generate a C++ Router class that forwards the packet by looking up a equivalence class based lookup table using binary search on ranges~\cite{binary_search_lookup}.
 
-Figure~\ref{fig:opt} shows the implementation of the optimization procedure. Other than the network configuration, the user also provides a group of nodes to act as a "component" that will be optimized to a single node. Equivalence classes will be generated first using a bit trie with the idea of Atomic Predicate. For each of the equivalence class, a concrete packet is also generated. With these information, a network simulator will be generated that injects a concrete packet of each equivalence class to each node in the group. The execution of the simulator will record where each of these injected packet exit the group of nodes. The output is then used to generate a single node class that make forwarding decision by looking up the input equivalence class using binary search on ranges.
+Figure~\ref{fig:opt} shows the implementation of the optimization procedure. Other than the network configuration, the user also specify a group of nodes to act as a ``module'' or ``component'' that will be optimized to a single node. Equivalence classes will be generated first using a bit trie with the idea of aptomic predicate. For each of the equivalence class, a concrete packet is also generated. With these information, a network simulator will be generated that injects a concrete packet of each equivalence class to each node in the group. The execution of the simulator will record where each of these injected packet exits the group of nodes. This output is then used to generate a single node class that make forwarding decision by looking up the input equivalence class using binary search on ranges.
 
-By merging consecutive ranges having the same forwarding result before generating code for binary search, the routing table can effectively be compressed.
+By merging consecutive ranges having the same forwarding result before generating code for binary search, the routing table can effectively be compressed and aggregated.
 
 \begin{figure}[]
  \centering
@@ -325,6 +325,36 @@ class LeafP19S3 {
 
 \end{lstlisting}
 \section{Evaluation}\label{sec:eval}
+The data plane verification design is evaluated for both its performance and correctness.
+
+\begin{figure}[]
+	\centering
+	\includegraphics[width=\linewidth]{scenario-simple.png}
+	\caption{4-node topology}
+	\label{fig:scenario1}
+\end{figure}
+
+\subsection{stateful nodes}
+
+\subsection{optimization}
+The optimization is evaluated in two scenarios. First, the effectiveness of FIB compression is evaluated in a 4-node topology illustrated by Fig.~\ref{fig:scenario1}. To show the effectiveness of routing table compression, we divided the two length 16 prefixes in forwarding table of node 1 to 2048 length 26 prefixes. We then run a source reachability query from node 1 with or without optimization and record the execution time of compilation and KLEE symbolic execution. Secondly, the efficiency of joint optimization across multiple nodes by grouping them into a single node is evaluated in a fat tree topology with 720 routers. The optimizer groups each pod of the fat tree into a single node. A source reachability query is run from one leaf node toward all other nodes. Table~\ref{tab:eval-opt} shows the result of the evaluations. The path row shows number of execution paths KLEE discovered and the instructions row shows the number of instructions executed during the symbolic execution.
+
+The result for the routing table compression is promising. The execution time is improved for more than 100 times. Looking at the number of path and instructions explored by symbolic execution, we can see that by merging routing table entries, the number of paths in the program is significantly reduced, which contributes to the performance gain.
+
+The result for the grouping, however, shows that the optimization is \textbf{not} useful. While the number of instruction executed by KLEE is significantly reduced, the number of paths and running time is not. That's because in the fat tree, there's no redundant routing rules and thus the optimization does not improve much on the number of path symbolic execution must explore. This also suggests that pruning the path has much higher performance gain compared with reducing the number of instructions.
+\begin{table}[!ht]
+	\centering
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline
+		scenario & 4-node & 4-node & fat-tree & fat-tree  \\ \hline
+		optimization & no & yes & no & yes  \\ \hline
+		time & 85.62s & 0.22s & 76.57s & 71.92s \\ \hline
+		path & 1119 & 7 & 313 & 338 \\ \hline
+		instructions & 1106328 & 3205 & 2606934 & 367028 \\ \hline
+	\end{tabular}
+	\caption{optimization evaluation results}
+	\label{tab:eval-opt}
+\end{table}
 
 \section{FUTURE DIRECTION}\label{sec:fd}
 
