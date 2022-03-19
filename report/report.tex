@@ -266,6 +266,7 @@ int main() {
 Intuitively, loop detection should check if a packet reenters a router. However, to minimize the states and simplify the problem, we detect loop by checking for TTL violations. By settings a TTL much larger than network diameter and checking for TTL drop. Loops can be detected. The loop detection test driver is exactly the same as the reachability query test driver in listing~\ref{code:reachability-driver}. Note that the generated comment \emph{[TTL-Drop] potential loop} is used for post processors to identify the test packet that could trigger loop.
 
 \subsection{Stateful Nodes}
+\label{sec:stateful}
 Many networks may also have stateful nodes, such as dynamic NAT routers or round-robin load balancers. 
 The challenge of verifying such boxes is that the previous packets may cause the forwarding behavior to change in later packets. 
 Therefore, instead of needing to send a single packet, a sequence of packets may be required to completely verify this. 
@@ -403,6 +404,21 @@ class LeafP19S3 {
 \section{Evaluation}\label{sec:eval}
 
 \section{FUTURE DIRECTION}\label{sec:fd}
+
+In the future, we may explore further optimizations to make the verification more scalable. These optimization may include:
+
+\textbf{Exploring loop merging in klee}. 
+The Klee symbolic execution will create new branches in the execution tree, and as the forwarding path branches, the number of the path will grow quickly. 
+This is known as the state explosion problem. 
+One of the mitigation approaches is to merge paths, so that the states sharing subsequent execution paths, or forwarding paths in our case, can be executed together. 
+We have explored the use of a path merging mechanism included in Klee for our code, but it does not bring a large performance gain. 
+Therefore, one of the future directions is to build a path merger that works well for our specific scenario of packet forwarding. 
+
+\textbf{Using NetSMC-like sequence search for stateful networks}.
+As discussed in \ref{sec:stateful}, NetSMC\cite{NetSMC} proposes a search for property violating packet sequence by repeatedly finding the last packet that moves the network into the erroneous state. 
+This approach efficiently eliminates the un-interesting path in the execution and therefore scales better than the approach of injecting multiple symbolic packets into the model network. 
+In the future, we hope to use a similar search technique for stateful network verification. 
+To achieve this, we may need a tighter coupling between Klee and the code generation. 
 
 \section{CONCLUSIONS}\label{sec:c}
 
