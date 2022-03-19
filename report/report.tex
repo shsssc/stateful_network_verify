@@ -299,6 +299,28 @@ However, for our current implementation, such verification may need multiple use
 
 \subsection{Other Queries}
 
+With the use of the code generator and KLEE, we hope that the approach can be easily generalize to new network architecture/protocols, as well as new queries to be verify in the network. 
+For example, we try to verify the effectiveness of load balancers: for any packet going, it has the same chance of using all the equivlent routers. 
+
+To achieve this, we can generate a new main function that sends symbolic packets N times, and count the number of packet through the equivlent routers. 
+Using this approach, we found that our implementation of fat tree structure failed to send packets equally to all core routers. 
+This is because by hash polarization, where when we use multiple layer of ECMP load balancing, all the packets with the same hash basket is sent to the same path, so subsequent routers cannot split them with the same hash function. 
+An illustration of this problem is \ref{fig:hash_polar} from \cite{huawei-hash}.
+
+\begin{figure}[]
+  \centering
+  \includegraphics[width=\linewidth]{hash-polar.png}
+  \caption{The Hash Polarization Issue}
+  \label{fig:hash_polar}
+\end{figure}
+
+As we realize the first method has flaw that it depends on the implementation of the routers, as have designed a second structure. 
+In this design, the routers can forward packets to multiple ports, but each forwarding contains a probability value. 
+That is, a 2-way load balancer will send packets to both way with a "probability value" of 1/2. 
+This allows use to analyze the amount of traffic through each equivlent router easily. 
+However, this approach may not be able to verify the problem cause by internals of routers, like hash polarization. 
+It is only verifying that there is no path that does not pass through even load balancing. 
+
 \subsection{Optimization}\label{sec:opt}
 The goal of optimization in code generation is to reduce unnecessary number of instructions, especially branches. Our optimization focuses on the common case of longest prefix matching based stateless routers without ACL or ECMP. There are two aspects of optimization we hope to achieve. Firstly, the routing table lookup has lots of branches and we hope to improve the performance by both compressing the routing table and using a efficient lookup algorithm. Secondly, a group of routers can be replaced as a single node with the same behavior from the outside point of view. This grouping of nodes and abstracting them as a single one allows joint optimization and lookup of all the FIBs in this group.
 
