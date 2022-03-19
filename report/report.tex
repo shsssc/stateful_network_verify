@@ -105,11 +105,13 @@ The most import part of it is the main loop that keeps forwarding packets step b
 Depending on the property to verify, the generator may also record of packet paths and other states for later property checks. 
 The code generators may embed comments in the generated code to facilitate post-processing.
 
-
-
+The code generator are written with Python, and they uses jinja template library to insert required config parameter to the code template. 
+These code generator are designed as modular classes, so that the operator can use a single script to invoke node, topology and verification generator for corresponding config information, and complete the verification. 
 
 \subsection{Constrains}
-Symbolic execution can perform poorly when the program has large loops, requires variable length in-memory data structures, or make many unnecessary branches. Being aware of these limitations, code generator of this framework inlines table (for example, FIB) lookup as a sequence of branches, instead of relying on in-memory data structures. It also bounds all loops to bound the total amount of execution paths. 
+Symbolic execution can perform poorly when the program has large loops, requires variable length in-memory data structures, or make many unnecessary branches. 
+Being aware of these limitations, code generator of this framework inlines table (for example, FIB) lookup as a sequence of branches, instead of relying on in-memory data structures. 
+It also bounds hop limit to bound the total amount of execution paths. 
 
 \subsection{Packet State}
 Inspired by HSA~\cite{hsa}, the packet state is the combination of header and location as shown in listing \ref{code:state}.
@@ -262,7 +264,38 @@ int main() {
 
 \subsection{Loop Detection Query}
 Intuitively, loop detection should check if a packet reenters a router. However, to minimize the states and simplify the problem, we detect loop by checking for TTL violations. By settings a TTL much larger than network diameter and checking for TTL drop. Loops can be detected. The loop detection test driver is exactly the same as the reachability query test driver in listing~\ref{code:reachability-driver}. Note that the generated comment \emph{[TTL-Drop] potential loop} is used for post processors to identify the test packet that could trigger loop.
+
 \subsection{Stateful Nodes}
+Many networks may also have stateful nodes, such as dynamic NAT routers or round robin load balancers. 
+The challenge of verifying such boxes is that the previous packets may cause the forwarding behavior to change in later packets. 
+Therefore, instead of needing to send a single packet, a sequence of packets may be required to completely verify this. 
+According to \cite{stateful_verification_complexity}, the complexity of verifying a stateful middlebox may increase to CoNP or EXPSPACE-complete from polynomial time, depending on the property of the middlebox function itself. 
+Verifying networks containing such nodes are still a challenge for our verification tool\cite{stateful_verification_complexity}, we tries to mitigate the problem with the following approaches:
+
+\begin{itemize}
+  \item Converting to non-stateful nodes. 
+  Some of the nodes may be approximated with non-stateful routers. 
+  For example, the per-packet round robin load balancer can be replaced with hash-based load balancer, and dynamic NAT can be approaximated with static NAT functions. 
+  This approach is efficient, but it can only be used in case-by-case basis, and some of the original error may not be catched after the conversion. 
+  \item Use symbolic states with injecting single packet. 
+  In some of the cases like stateful firewall or NAT, we can directly place the state of the router as symbolic. 
+  Then, the verification will run with both the packet used and the state of these nodes. 
+  However, this verification may have false positive, when the verifier tries un-reachable states, and therefore requires manual review of the outputed states. 
+  \item Injecting multiple packets. 
+  This is the more complete solution to verify the stateful nodes. 
+  However, the KLEE solver runtime is exponential to the number of packet inject, as the length of the symbolic components to verify is growing. 
+  However, by selecting some typical sequence of packets, we can test the behavior of the network. 
+  For example, for dynamic NAT boxes, we can choose a outbound packet, its reversed packet as reply, and a repetition of the initial packet, and this will suffice as a basic test of consistency in the network. 
+\end{itemize}
+
+None of the method we currently have are sophisticated enough to scale in arbitrary stateful middleboxes, so the boxes need to be analyzed before placing into the verification tool. 
+In the future, there may be more sophisticated approaches that can be implemented with our current design, but it requires an overhaul of the verification pipeline. 
+
+For example, using the approach in NetSMC\cite{NetSMC}, we could use our verification tool to find the symbolic last packet $P_1$ and corresponding middlebox state $S_1$ that violates our verification property, 
+then find the previous packet $P_2$ that cause the router to enter the state $S_1$. 
+By looping this procedure on "finding last packet", we can trace to the initial state of the router, and therefore finding the sequence that may cause network failure, as well as the state sequence that leads to the problem.
+However, for our current implementation, such verification may need multiple use of the code generator and KLEE, and therefore hard to perform in the limited time of the project.
+
 
 \subsection{Other Queries}
 
